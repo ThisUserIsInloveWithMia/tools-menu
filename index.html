@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Main Menu</title>
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      margin: 0; padding: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #4f46e5, #ff7e00);
+      color: #fff;
+    }
+    h1 {
+      margin-bottom: 40px;
+      font-size: 2em;
+      text-align: center;
+      text-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    .menu {
+      display: flex; gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .menu a {
+      display: inline-block;
+      padding: 16px 30px;
+      border-radius: 12px;
+      font-size: 1.1em;
+      font-weight: 600;
+      text-decoration: none;
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+    }
+    .menu a:hover {
+      background: #fff;
+      color: #333;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome — Choose a Tool</h1>
+  <div class="menu">
+    <a href="DSIRProcessor_v6_3_UI_layout.html">📊 DSIR Processor</a>
+    <a href="InvoiceGenerator.html">🧾 Invoice Generator</a>
+  </div>
+</body>
+</html>

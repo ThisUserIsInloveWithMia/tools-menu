@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Receipt Generator — King's Bakeshop (v14 Sidebar+Fix)</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  :root{
+    --bg:#f5f5f5; --text:#333; --accent:#FF7E00; --accent-2:#FF4500;
+    --card:#fff; --card-alt:#f9f9f9; --muted:#666; --border:#ddd;
+    --summary-bg:#FF7E00; --summary-text:#fff; --btn-disabled:#aaa;
+  }
+  body.dark{
+    --bg:#121212; --text:#eaeaea; --accent:#FF8A3D; --accent-2:#FF5C33;
+    --card:#1e1e1e; --card-alt:#232323; --muted:#bdbdbd; --border:#333;
+    --summary-bg:#FF5C33; --summary-text:#fff; --btn-disabled:#555;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg); color: var(--text);
+    margin:0; padding:0;
+    transition: background-color 0.6s ease, color 0.6s ease;
+  }
+
+  /* ===== Header ===== */
+  header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 16px;
+    position:sticky; top:0;
+    background:rgba(255,255,255,0.6);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+    z-index:200;
+  }
+  body.dark header{ background:rgba(18,18,18,0.6); }
+  .title-wrap h1{ margin:0; font-size:20px; color:var(--accent-2); }
+  .title-wrap h2{ margin:0; font-size:12px; color:var(--muted); }
+
+  /* Transparent menu icon */
+  .icon-btn{
+    background:none; border:none; color:var(--text);
+    font-size:22px; cursor:pointer; padding:6px; border-radius:8px;
+  }
+  .icon-btn:hover{ color:var(--accent); background:transparent; }
+
+  .theme-icon{ font-size:20px; cursor:pointer; transition:transform 0.6s ease; display:inline-block; }
+  .theme-icon.spin{ transform:rotate(360deg) scale(1.2); }
+
+  .container{ max-width:980px; margin:auto; padding:20px; }
+
+  label{ display:block; margin-top:15px; font-weight:600; }
+  input{
+    margin-top:6px; padding:10px; width:100%;
+    border-radius:8px; border:2px solid var(--accent);
+    background:var(--card); color:var(--text);
+  }
+  button{
+    margin-top:10px; padding:12px; border:none; border-radius:25px;
+    font-weight:600; background:var(--accent); color:#fff; cursor:pointer;
+    transition:all 0.25s ease;
+  }
+  button:hover:enabled{ background:var(--accent-2); }
+  button:disabled{ background:var(--btn-disabled); cursor:not-allowed; }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+
+  .receipt-card{
+    border-radius:10px; padding:12px; margin-bottom:12px;
+    background:var(--card); border:1px solid var(--border);
+    box-shadow:0 2px 5px rgba(0,0,0,0.15);
+  }
+  .receipt-card.alt{ background:var(--card-alt); }
+  .receipt-header{ font-weight:600; margin-bottom:8px; }
+  .rounding{ border:2px solid var(--accent); }
+  .rounding .receipt-header{ color:var(--accent); }
+
+  .summary-card{
+    background:var(--summary-bg); color:var(--summary-text);
+    font-weight:600; border-radius:10px;
+    padding:14px; margin-top:20px; text-align:center;
+  }
+  .footer{ margin-top:14px; text-align:center; }
+
+  /* ===== Sidebar Menu ===== */
+  .sidebar{
+    position:fixed; top:0; left:0;
+    width:300px; height:100%;
+    background:rgba(255,255,255,0.7);
+    backdrop-filter:blur(12px);
+    border-right:1px solid var(--border);
+    transform:translateX(-100%);
+    transition:transform 0.3s ease;
+    z-index:1000;
+    display:flex; flex-direction:column;
+  }
+  body.dark .sidebar{ background:rgba(18,18,18,0.7); }
+  .sidebar.open{ transform:translateX(0); }
+  .sidebar-header{ display:flex; justify-content:space-between; align-items:center; padding:12px; }
+  .sidebar-content{ flex:1; overflow-y:auto; padding:12px; }
+  .sidebar h3{ margin:0; color:var(--accent-2); }
+  .menu-card{ padding:12px; margin:6px 0; border-radius:8px; cursor:pointer; }
+  .menu-card:hover{ background:var(--accent); color:#fff; }
+
+  /* ===== Modals ===== */
+  .modal{ display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.5); backdrop-filter:blur(6px);
+    justify-content:center; align-items:center; z-index:1200; }
+  .modal-content{
+    background:var(--card); color:var(--text);
+    padding:20px; border-radius:12px;
+    max-width:560px; max-height:85vh; overflow:auto;
+    border:1px solid var(--border);
+  }
+  .modal-content h3{ margin-top:0; color:var(--accent-2); }
+  .price-row{ display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
+  .price-row input{ width:90px; text-align:right; padding:6px; border-radius:6px; border:1px solid var(--border); }
+  .section-title{ margin-top:12px; font-weight:600; color:var(--accent-2); }
+  .close-btn{ margin-top:12px; padding:8px 14px; border:none; border-radius:20px; background:var(--accent); color:#fff; cursor:pointer; }
+  .close-btn:hover{ background:var(--accent-2); }
+
+  
+/* ===== Responsive Receipt Layout ===== */
+.row-line { display:block; }
+.receipt-table { display:none; width:100%; border-collapse:collapse; margin-top:6px; }
+.receipt-table th,.receipt-table td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); }
+.receipt-table th { background:rgba(0,0,0,0.05); font-weight:bold; }
+body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
+.gross-row td { font-weight:bold; color:var(--accent-2); }
+@media (min-width:768px) and (orientation:landscape), (min-width:992px){
+  .row-line { display:none; }
+  .receipt-table { display:table; }
+}
+
+@media print{
+    header,.btn-row,.footer,label,input,.modal,.sidebar{ display:none!important; }
+    .container{ max-width:100%; padding:0; }
+    .receipt-card,.summary-card{ box-shadow:none; border:1px solid #000; page-break-inside:avoid; }
+  }
+  </style>
+</head>
+<body>
+  <header>
+    <button id="menuBtn" class="icon-btn" title="Menu">☰</button>
+    <div class="title-wrap">
+      <h1>Receipt Generator — King's Bakeshop</h1>
+      <h2>by Lemuel Ponciano</h2>
+    </div>
+    <div class="theme-switch"><span id="themeIcon" class="theme-icon">🌙</span></div>
+  </header>
+
+  <!-- Sidebar Menu -->
+  <div id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h3>Menu</h3>
+      <button class="icon-btn" onclick="closeMenu()" title="Close">✖</button>
+    </div>
+    <div class="sidebar-content">
+      <div class="menu-card" onclick="openHelp()">❓ Help</div>
+      <div class="menu-card" onclick="openVersion()">ℹ️ Version Info</div>
+      <div class="menu-card" onclick="reportIssue()">📥 Report Project Summary</div>
+      <div class="menu-card" onclick="openPriceAdjust()">🛠 Price Adjustment</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <label>Starting Receipt #</label>
+    <input id="startNumber" type="number" placeholder="e.g., 3087" />
+    <label>Gross Target (₱)</label>
+    <input id="grossTarget" type="number" step="0.01" placeholder="e.g., 21460.40" />
+    <label>Approx. Receipt Count</label>
+    <input id="approxCount" type="number" placeholder="e.g., 55" />
+
+    <div class="btn-row">
+      <button id="genBtn">Generate Receipts</button>
+      <button id="copyBtn">Copy All Receipts</button>
+      <button id="printBtn">🖨️ Print / Save PDF</button>
+    </div>
+
+    <div id="receipts"></div>
+
+    <div class="footer"><button id="reportBtn" disabled>📥 Report Project Summary</button></div>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="modal">
+    <div class="modal-content">
+      <h3>Rounding Receipt (Pangsuma)</h3>
+      <p>Last receipt must be <b>breads-only</b> ₱150–₱250. Centavos from Target Gross go here.</p>
+      <button class="close-btn" onclick="closeHelp()">OK</button>
+    </div>
+  </div>
+
+  <!-- Version Modal -->
+  <div id="versionModal" class="modal">
+    <div class="modal-content">
+      <h3>Version 14 Sidebar + Fix</h3>
+      <ul style="text-align:left;font-size:14px;">
+        <li>Modern sidebar menu</li>
+        <li>Price Adjustment modal restored with full products</li>
+        <li>Transparent menu icon</li>
+        <li>Fixed generator (cakes solo, rounding 150–250)</li>
+      </ul>
+      <button class="close-btn" onclick="closeVersion()">OK</button>
+    </div>
+  </div>
+
+  <!-- Price Adjustment Modal -->
+  <div id="priceModal" class="modal">
+    <div class="modal-content">
+      <h3>Price Adjustment</h3>
+      <input id="searchBox" type="text" placeholder="Search product..." style="width:100%;padding:8px;margin:10px 0;border-radius:8px;border:2px solid var(--accent);"/>
+      <div id="priceList"></div>
+      <button onclick="savePrices()">✅ Save Changes</button>
+      <button onclick="resetPrices()">🔄 Reset Defaults</button>
+      <button class="close-btn" onclick="closePriceAdjust()">Close</button>
+    </div>
+  </div>
+
+<script>
+// ===== Full Default Product Lists =====
+const DEFAULT_BREADS = {
+  "Coffee Bavarian Bun":48,"Ube Ensaymada":47,"Pineapple Delight":32,"Cheese Roll":37,
+  "Choco Crinkles":52,"Cream Bread":75,"Malunggay Cheese Pandesal":69,"Ube Stick":22,
+  "Dulce de Ube":99,"Chiffon Cake":62,"Hopia Ube":168,"Coco Cluster (x6)":59,
+  "Raisin Minis":50,"Cheese Pie":27,"Premium Cheese Bread":150,"Fluffy Chiffon":45,
+  "Yema Krema":89,"Malunggay Tuna":45,"Cheese Bites":72,"Leche Flan Cake":195,
+  "Custard Cream Bun":38,"Pizza Dog":58,"Choco Vanilla":39,"Special Pandesal (x9)":58,
+  "Macaroons":95,"Ube Queso Pandesal":125,"Milky Baby Pandesal":68,"S’mores Fudge":198
+};
+const DEFAULT_CAKES = {
+  "Ivory Bloom Affordable":399,"Dolce de Leche Affordable":450,"Ube Leche Flan Affordable":495,
+  "Ube Halaya Affordable":450,"Choco Fantasy Affordable":450,"Mochalicious Affordable":450,
+  "Choco Caramel Affordable":495,"Choco Dream Affordable":495,"Mango Supreme Affordable":495,
+  "Mocha Drip Affordable":495,"Yema Cake Affordable":495,"The Duet (Choco Mocha)":495,
+  "Kitkat Mousse Affordable":550,"Nutella Affordable":550
+};
+
+let breads = {}, cakes = {};
+function loadPrices(){
+  breads = JSON.parse(localStorage.getItem("breads") || JSON.stringify(DEFAULT_BREADS));
+  cakes  = JSON.parse(localStorage.getItem("cakes")  || JSON.stringify(DEFAULT_CAKES));
+}
+function renderPriceAdjust(filter=""){
+  const list=document.getElementById("priceList");
+  const f = filter.toLowerCase();
+  let html = "<div class='section-title'>🥖 Breads</div>";
+  Object.entries(breads).forEach(([name, price])=>{
+    if(!f || name.toLowerCase().includes(f)){
+      html += `<div class="price-row"><span>${name}</span>
+                <input type="number" class="price-input" data-cat="bread" data-name="${name}" value="${price}" /></div>`;
+    }
+  });
+  html += "<div class='section-title'>🍰 Cakes</div>";
+  Object.entries(cakes).forEach(([name, price])=>{
+    if(!f || name.toLowerCase().includes(f)){
+      html += `<div class="price-row"><span>${name}</span>
+                <input type="number" class="price-input" data-cat="cake" data-name="${name}" value="${price}" /></div>`;
+    }
+  });
+  list.innerHTML = html;
+}
+function savePrices(){
+  document.querySelectorAll(".price-input").forEach(inp=>{
+    const val = +inp.value, cat = inp.dataset.cat, name = inp.dataset.name;
+    if(cat==="bread") breads[name]=val; else cakes[name]=val;
+  });
+  localStorage.setItem("breads", JSON.stringify(breads));
+  localStorage.setItem("cakes",  JSON.stringify(cakes));
+  alert("✅ Prices updated!");
+}
+function resetPrices(){
+  breads = {...DEFAULT_BREADS};
+  cakes  = {...DEFAULT_CAKES};
+  localStorage.removeItem("breads"); localStorage.removeItem("cakes");
+  renderPriceAdjust();
+}
+
+
+// ===== v4 Data Bridge =====
+// Build BREADS/CAKES arrays from current editable price objects (breads/cakes)
+function rebuildArraysFromStorage(){
+  BREADS = Object.entries(breads).map(([n,p])=>[n, Number(p)]);
+  CAKES  = Object.entries(cakes).map(([n,p])=>[n, Number(p)]);
+}
+
+// ===== Helpers =====
+const $ = s => document.querySelector(s);
+function money(n){ return "₱"+(+n).toFixed(2); }
+function vatFromGross(g){ return +(g*12/112).toFixed(2); }
+function netFromGross(g){ return +(g - vatFromGross(g)).toFixed(2); }
+
+let projectSummary = "";
+
+// ===== Theme =====
+function applyTheme(){
+  const theme = localStorage.getItem("theme") || "light";
+  document.body.classList.toggle("dark", theme==="dark");
+  document.body.classList.toggle("light", theme==="light");
+  const icon = $("#themeIcon"); if(icon) icon.textContent = theme==="dark" ? "☀️" : "🌙";
+}
+function toggleTheme(){
+  const dark = !document.body.classList.contains("dark");
+  localStorage.setItem("theme", dark ? "dark" : "light");
+  applyTheme();
+  const icon = $("#themeIcon"); if(icon){ icon.classList.add("spin"); setTimeout(()=>icon.classList.remove("spin"), 600); }
+}
+document.addEventListener("DOMContentLoaded", ()=>{
+  applyTheme();
+  $("#themeIcon").addEventListener("click", toggleTheme);
+});
+
+// ===== Sidebar =====
+function openMenu(){ $("#sidebar").classList.add("open"); }
+function closeMenu(){ $("#sidebar").classList.remove("open"); }
+
+// ===== Modals =====
+function openHelp(){ $("#helpModal").style.display="flex"; }
+function closeHelp(){ $("#helpModal").style.display="none"; }
+function openVersion(){ $("#versionModal").style.display="flex"; }
+function closeVersion(){ $("#versionModal").style.display="none"; }
+function openPriceAdjust(){ loadPrices(); renderPriceAdjust(); $("#priceModal").style.display="flex"; }
+function closePriceAdjust(){ $("#priceModal").style.display="none"; }
+
+// ===== Generator (safe fallback) =====
+
+function generate(){
+  loadPrices();
+  const start  = +$("#startNumber").value;
+  const target = +$("#grossTarget").value;
+  const approx = +$("#approxCount").value;
+  if(!start || !target || !approx){ alert("Fill in all inputs"); return; }
+  if(target < 50){ alert("Target gross too low."); return; }
+
+  const breadsArr = Object.entries(breads);
+  const cakesArr  = Object.entries(cakes);
+
+  let receipts=[], running=0, current=start;
+
+  function randomBreadReceipt(rem){
+    let k = Math.floor(Math.random()*6)+1;
+    let pool=[...breadsArr]; pool.sort(()=>Math.random()-0.5);
+    let items=[], gross=0;
+    for(let i=0;i<pool.length&&items.length<k;i++){
+      let [n,p]=pool[i];
+      let qty = Math.floor(Math.random()*3)+1; // 1–3
+      let cost = p*qty;
+      if(gross+cost <= rem){
+        items.push([qty,n,p,cost]);
+        gross+=cost;
+      }
+    }
+    return {items,gross};
+  }
+  function makeCakeReceipt(){
+    let [n,p]=cakesArr[Math.floor(Math.random()*cakesArr.length)];
+    return {items:[[1,n,p,p]],gross:p,cake:true}; // cakes solo
+  }
+
+  while(running < target-200 && receipts.length < approx-1){
+    let rem = target-running;
+    let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
+    if(cand.items.length && running+cand.gross <= target){
+      receipts.push({...cand,num:current++});
+      running+=cand.gross;
+    } else break;
+  }
+
+  let remainder = +(target-running).toFixed(2);
+
+  if(remainder > 110){
+    let safety=0;
+    while(remainder > 110 && safety<2000){
+      for(let i=0;i<receipts.length && remainder>110;i++){
+        let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
+        let qty = Math.floor(Math.random()*5)+1; // 1–5
+        let addCost = p*qty;
+        if(running+addCost <= target){
+          receipts[i].items.push([qty,n,p,addCost]);
+          receipts[i].gross += addCost;
+          running += addCost;
+          remainder -= addCost;
+        }
+      }
+      safety++;
+    }
+  }
+
+  if(remainder < 90 || remainder > 110){
+    remainder = 100;
+  }
+
+  let finalItems=[[1,"Rounding Breads",remainder,remainder]];
+  receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
+  running=+(running+remainder).toFixed(2);
+
+  const wrap=$("#receipts"); wrap.innerHTML="";
+  receipts.forEach((r,idx)=>{
+    const card=document.createElement("div");
+    card.className="receipt-card"+(idx%2?" alt":"")+(r.rounding?" rounding":"");
+    const header=document.createElement("div");
+    header.className="receipt-header";
+    header.textContent = r.rounding?`🔶 Receipt ${r.num} (Rounding)`: `Receipt ${r.num}${r.cake?" — Cake Only":""}`;
+    card.appendChild(header);
+    let tbodyHTML="";
+    r.items.forEach(it=>{
+      const row=document.createElement("div");
+      row.className="row-line";
+      row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${it[3].toFixed(2)}`;
+      card.appendChild(row);
+      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(it[3])}</td></tr>`;
+    });
+    const vat=vatFromGross(r.gross), net=netFromGross(r.gross);
+    card.innerHTML+=`<div class="row-line">Less: VAT (12%) = ${money(vat)}</div>`;
+    card.innerHTML+=`<div class="row-line">Net of VAT = ${money(net)}</div>`;
+    card.innerHTML+=`<div class="row-line"><b>Gross Total: ${money(r.gross)}</b></div>`;
+    tbodyHTML+=`<tr><td colspan="3">Less: VAT (12%)</td><td>${money(vat)}</td></tr>`;
+    tbodyHTML+=`<tr><td colspan="3">Net of VAT</td><td>${money(net)}</td></tr>`;
+    tbodyHTML+=`<tr class="gross-row"><td colspan="3">Gross Total</td><td>${money(r.gross)}</td></tr>`;
+    const tableHTML=`<table class="receipt-table"><thead><tr><th>Qty</th><th>Product</th><th>Price</th><th>Total</th></tr></thead><tbody>${tbodyHTML}</tbody></table>`;
+    card.innerHTML+=tableHTML;
+    wrap.appendChild(card);
+  });
+  const diff=+(running-target).toFixed(2);
+  const summary=document.createElement("div");
+  summary.className="summary-card";
+  summary.innerHTML=`PROJECT SUMMARY<br>Start: ${start} – End: ${current}<br>Receipts: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(running)}<br>Difference: ${diff>0?"+":""}${money(diff)}`;
+  wrap.appendChild(summary);
+  projectSummary=summary.innerText;
+  $("#reportBtn").disabled=false;
+}
+// ===== Copy / Print / Report =====
+function copyAll(){
+  const text = $("#receipts").innerText.trim();
+  if(!text){ alert("No receipts"); return; }
+  navigator.clipboard.writeText(text).then(()=>alert("✅ Copied!"));
+}
+function printPDF(){ window.print(); }
+function reportIssue(){
+  if(!projectSummary){ alert("No summary yet"); return; }
+  const blob = new Blob([projectSummary], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "project_summary.txt"; a.click();
+}
+
+// ===== Bindings =====
+$("#genBtn").onclick = generate;
+$("#copyBtn").onclick = copyAll;
+$("#printBtn").onclick = printPDF;
+$("#reportBtn").onclick = reportIssue;
+$("#menuBtn").onclick = openMenu;
+document.getElementById("searchBox").addEventListener("input", e => renderPriceAdjust(e.target.value));
+</script>
+</body>
+</html>
