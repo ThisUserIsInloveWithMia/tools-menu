@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Main Menu</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
   <style>
     body {
       font-family: 'Poppins', Arial, sans-serif;
@@ -15,10 +17,17 @@
       color: #fff;
     }
     h1 {
-      margin-bottom: 40px;
+      margin-bottom: 10px;
       font-size: 2em;
       text-align: center;
       text-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    h2 {
+      margin-bottom: 40px;
+      font-size: 1.1em;
+      font-weight: 400;
+      text-align: center;
+      color: #eee;
     }
     .menu {
       display: flex; gap: 20px;
@@ -53,5 +62,13 @@
     <a href="DSIRProcessor_v6_3_UI_layout.html">📊 DSIR Processor</a>
     <a href="InvoiceGenerator.html">🧾 Invoice Generator</a>
   </div>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js")
+        .then(() => console.log("✅ Service Worker Registered"))
+        .catch(err => console.error("SW registration failed:", err));
+    }
+  </script>
 </body>
 </html>
