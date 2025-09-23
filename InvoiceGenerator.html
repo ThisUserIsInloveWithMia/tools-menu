@@ -325,6 +325,7 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 // ===== Generator (safe fallback) =====
 
+
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
@@ -338,26 +339,41 @@ function generate(){
 
   let receipts=[], running=0, current=start;
 
+  // Utility to add product with merging duplicates
+  function addItem(arr, qty, name, price){
+    let found = arr.find(it => it[1]===name && it[2]===price);
+    if(found){
+      found[0]+=qty;
+      found[3]+=price*qty;
+    } else {
+      arr.push([qty,name,price,price*qty]);
+    }
+  }
+
+  // Initial random bread receipt with random quantities
   function randomBreadReceipt(rem){
     let k = Math.floor(Math.random()*6)+1;
     let pool=[...breadsArr]; pool.sort(()=>Math.random()-0.5);
     let items=[], gross=0;
     for(let i=0;i<pool.length&&items.length<k;i++){
       let [n,p]=pool[i];
-      let qty = Math.floor(Math.random()*3)+1; // 1–3
+      let qty = Math.floor(Math.random()*3)+1;
       let cost = p*qty;
       if(gross+cost <= rem){
-        items.push([qty,n,p,cost]);
+        addItem(items, qty, n, p);
         gross+=cost;
       }
     }
     return {items,gross};
   }
+
+  // Cake receipts must always be solo
   function makeCakeReceipt(){
     let [n,p]=cakesArr[Math.floor(Math.random()*cakesArr.length)];
-    return {items:[[1,n,p,p]],gross:p,cake:true}; // cakes solo
+    return {items:[[1,n,p,p]],gross:p,cake:true};
   }
 
+  // Build receipts until near target
   while(running < target-200 && receipts.length < approx-1){
     let rem = target-running;
     let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
@@ -367,17 +383,21 @@ function generate(){
     } else break;
   }
 
+  // Final remainder
   let remainder = +(target-running).toFixed(2);
 
+  // Aggressive redistribution with duplicate merging
   if(remainder > 110){
     let safety=0;
     while(remainder > 110 && safety<2000){
       for(let i=0;i<receipts.length && remainder>110;i++){
+        // skip cake receipts
+        if(receipts[i].cake) continue;
         let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
-        let qty = Math.floor(Math.random()*5)+1; // 1–5
+        let qty = Math.floor(Math.random()*5)+1;
         let addCost = p*qty;
         if(running+addCost <= target){
-          receipts[i].items.push([qty,n,p,addCost]);
+          addItem(receipts[i].items, qty, n, p);
           receipts[i].gross += addCost;
           running += addCost;
           remainder -= addCost;
@@ -387,6 +407,7 @@ function generate(){
     }
   }
 
+  // Clamp remainder ~100
   if(remainder < 90 || remainder > 110){
     remainder = 100;
   }
@@ -395,6 +416,7 @@ function generate(){
   receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
   running=+(running+remainder).toFixed(2);
 
+  // Render receipts
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
     const card=document.createElement("div");
