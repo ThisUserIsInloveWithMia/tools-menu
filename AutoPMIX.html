@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Product Mix Generator (Bootstrap Styled v3.4.6)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg-tone: #f4f5f7;
+    --fade-duration: 0.8s;
+  }
+  body { background: var(--bg-tone); color:#000; }
+
+  .page {
+    position: relative;
+    min-height: 70vh;
+    overflow: hidden;
+  }
+  .page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .page > * { position: relative; z-index: 1; }
+
+  #page-home::before {
+    background:
+      radial-gradient(circle at 10px 10px, rgba(0,0,0,0.04) 2px, transparent 3px) 0 0/40px 40px,
+      linear-gradient(to bottom, rgba(255,255,255,0.6), rgba(255,255,255,0.6));
+  }
+  #page-sales::before {
+    background:
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.06) 0 10px, transparent 10px 20px);
+  }
+  #page-returns::before {
+    background:
+      radial-gradient(ellipse at top left, rgba(0,0,0,0.05), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.05), transparent 60%);
+  }
+  #page-summary::before {
+    background:
+      linear-gradient(0deg, rgba(0,0,0,0.04) 1px, transparent 1px) 0 0/ 40px 40px,
+      linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px) 0 0/ 40px 40px;
+  }
+
+  @keyframes dotsFade { from { opacity: 0; } to { opacity: 0.8; } }
+  @keyframes lineSweep { from { background-position: -40px 0; } to { background-position: 0 0; } }
+  @keyframes waveReveal { from { opacity: 0; transform: scale(1.02); } to { opacity: 0.8; transform: scale(1); } }
+  @keyframes gridFade { from { opacity: 0; } to { opacity: 0.8; } }
+
+  .page.fade-in { animation: pageFade var(--fade-duration) ease-in-out 1; }
+  @keyframes pageFade { from { opacity: 0; } to { opacity: 1; } }
+
+  #page-home.animate::before { animation: dotsFade var(--fade-duration) ease-in-out 1; }
+  #page-sales.animate::before { animation: lineSweep var(--fade-duration) ease-in-out 1; }
+  #page-returns.animate::before { animation: waveReveal var(--fade-duration) ease-in-out 1; }
+  #page-summary.animate::before { animation: gridFade var(--fade-duration) ease-in-out 1; }
+
+  .topbar { display:flex; align-items:center; gap:10px; padding: 12px 12px 0; }
+  .card-icon { font-size: 1.6rem; opacity: .8; }
+  .summary-card { color:#fff; padding:10px; border-radius:8px; margin:5px; }
+  .table-responsive { max-height:70vh; overflow:auto; }
+  thead th { position: sticky; top: 0; background:#f8f9fa; }
+</style>
+</head>
+<body>
+<div class="container-fluid">
+
+  <div class="topbar">
+    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+      ☰ Menu
+    </button>
+    <h5 class="m-0">Product Mix Generator</h5>
+  </div>
+
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel"
+       style="width:50vw; background: rgba(255,255,255,0.65); backdrop-filter: blur(8px); transition: transform var(--fade-duration) ease-in-out;">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="sidebarLabel">Menu</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <div class="list-group list-group-flush">
+        <button class="list-group-item list-group-item-action" onclick="showPage('home')" data-bs-dismiss="offcanvas">🏠 Home</button>
+        <button class="list-group-item list-group-item-action" onclick="showPage('sales')" data-bs-dismiss="offcanvas">📊 Sales</button>
+        <button class="list-group-item list-group-item-action" onclick="showPage('returns')" data-bs-dismiss="offcanvas">📦 Returns</button>
+        <button class="list-group-item list-group-item-action" onclick="showPage('summary')" data-bs-dismiss="offcanvas">📈 Summary</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="page-home" class="page fade-in mt-3">
+    <div class="container py-3">
+      <h3 class="mb-3">🏠 Home</h3>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <div class="fw-bold">Sales CSV Upload</div>
+                  <small class="text-muted">Upload your sales CSV (Adjustment column)</small>
+                </div>
+                <div class="card-icon">📂</div>
+              </div>
+              <input id="fileCsv" type="file" accept=".csv" class="form-control" />
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <div class="fw-bold">Returns CSV Upload</div>
+                  <small class="text-muted">Daily branches (Source Location)</small>
+                </div>
+                <div class="card-icon">📦</div>
+              </div>
+              <input id="fileReturns" type="file" accept=".csv" class="form-control mb-2" />
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <div class="fw-bold">Select Branch</div>
+                  <small class="text-muted">Filter returns by Source Location</small>
+                </div>
+                <div class="card-icon">🏢</div>
+              </div>
+              <select id="branchSelect" class="form-select">
+                <option value="">Select Branch</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <div class="fw-bold">DSIR Import</div>
+                  <small class="text-muted">CSV or Excel (.xlsx) with type & product</small>
+                </div>
+                <div class="card-icon">🗂️</div>
+              </div>
+              <input id="fileDsir" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="form-control" />
+              <div id="importStatus" class="mt-2 text-success fw-bold"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SALES -->
+  <div id="page-sales" class="page mt-3" style="display:none;">
+    <div class="container py-3">
+      <h3 class="mb-3">📊 Sales</h3>
+      <div class="row mb-3">
+        <div class="col"><div class="summary-card bg-success" id="sumMatched">Matched: 0</div></div>
+        <div class="col"><div class="summary-card bg-warning text-dark" id="sumFuzzy">Fuzzy: 0</div></div>
+        <div class="col"><div class="summary-card bg-danger" id="sumUnmatched">Unmatched: 0</div></div>
+        <div class="col"><div class="summary-card bg-primary" id="sumTotal">Grand Total: 0</div></div>
+      </div>
+      <div class="table-responsive">
+        <table id="tbl-sales" class="table table-bordered table-striped table-hover"><tbody><tr><td>Upload sales on Home</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RETURNS -->
+  <div id="page-returns" class="page mt-3" style="display:none;">
+    <div class="container py-3">
+      <h3 class="mb-3">📦 Returns</h3>
+      <div class="row mb-3">
+        <div class="col"><div class="summary-card bg-success" id="sumMatchedRet">Matched: 0</div></div>
+        <div class="col"><div class="summary-card bg-warning text-dark" id="sumFuzzyRet">Fuzzy: 0</div></div>
+        <div class="col"><div class="summary-card bg-danger" id="sumUnmatchedRet">Unmatched: 0</div></div>
+        <div class="col"><div class="summary-card bg-primary" id="sumTotalRet">Grand Total: 0</div></div>
+      </div>
+      <div class="table-responsive">
+        <table id="tbl-returns" class="table table-bordered table-striped table-hover"><tbody><tr><td>Upload returns & select branch on Home</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="page-summary" class="page mt-3" style="display:none;">
+    <div class="container py-3">
+      <h3 class="mb-3">📈 Summary</h3>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><div class="card shadow-sm border-primary"><div class="card-body"><div class="d-flex justify-content-between"><div><div class="fw-bold text-primary">Total Sales</div><div id="cardTotalSales" class="fs-4">0</div></div><div class="card-icon">📊</div></div></div></div></div>
+        <div class="col-md-4"><div class="card shadow-sm border-success"><div class="card-body"><div class="d-flex justify-content-between"><div><div class="fw-bold text-success">Total Returns</div><div id="cardTotalReturns" class="fs-4">0</div></div><div class="card-icon">📦</div></div></div></div></div>
+        <div class="col-md-4"><div class="card shadow-sm border-warning"><div class="card-body"><div class="d-flex justify-content-between"><div><div class="fw-bold text-warning">NoD</div><div id="cardNoD" class="fs-4">0</div></div><div class="card-icon">📅</div></div></div></div></div>
+        <div class="col-md-6"><div class="card shadow-sm border-secondary"><div class="card-body"><div class="d-flex justify-content-between"><div><div class="fw-bold text-secondary">Avg Return</div><div id="cardAvgReturn" class="fs-4">0</div></div><div class="card-icon">🔄</div></div></div></div></div>
+        <div class="col-md-6"><div class="card shadow-sm border-danger"><div class="card-body"><div class="d-flex justify-content-between"><div><div class="fw-bold text-danger">Avg Daily Sales</div><div id="cardAvgDailySales" class="fs-4">0</div></div><div class="card-icon">💰</div></div></div></div></div>
+      </div>
+
+      <p class="text-muted">Exports Sales & Returns (current branch) into Excel.</p>
+      <button id="btnSummaryExport" class="btn btn-primary">⬇️ Download Excel</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(div=>{ div.style.display='none'; div.classList.remove('animate','fade-in'); });
+  const next = document.getElementById('page-'+page);
+  next.style.display='block';
+  void next.offsetWidth;
+  next.classList.add('animate','fade-in');
+  setTimeout(()=> next.classList.remove('animate'), 900);
+}
+
+function norm(s){ return String(s||'').toLowerCase().replace(/^\ufeff/,'').trim().replace(/\s+/g,' '); }
+function parseDate(v){
+  if(!v) return null;
+  let d = new Date(v);
+  if(!isNaN(d)) return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+  const m = String(v).match(/^(\d{1,2})\s*-\s*([A-Za-z]{3})\s*-\s*(\d{4})$/);
+  if(m){
+    const months = {Jan:"01",Feb:"02",Mar:"03",Apr:"04",May:"05",Jun:"06",Jul:"07",Aug:"08",Sep:"09",Oct:"10",Nov:"11",Dec:"12"};
+    const day=("0"+m[1]).slice(-2), mon=months[m[2]]||"01", yr=m[3];
+    return yr+"-"+mon+"-"+day;
+  }
+  return null;
+}
+function toNumber(v){ if(typeof v==='number') return v; if(typeof v==='string'){ const t=v.trim(); if(!t) return 0; const n=Number(t.replace(/[, ]+/g,'')); return isNaN(n)?0:n; } return 0;}
+function lev(a,b){const m=a.length,n=b.length;if(m===0)return n;if(n===0)return m;const dp=new Array(n+1);for(let j=0;j<=n;j++)dp[j]=j;for(let i=1;i<=m;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=n;j++){const tmp=dp[j];const cost=a[i-1]===b[j-1]?0:1;dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+cost);prev=tmp;}}return dp[n];}
+function sim(a,b){const d=lev(a,b);const max=Math.max(a.length,b.length)||1;return 1-d/max;}
+function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+
+let DSIR_ROWS = [{"type": "product", "product": "Asado roll"}, {"type": "product", "product": "Asado square"}, {"type": "product", "product": "CHEESE BREAD x6"}, {"type": "product", "product": "Baked chicken empanada"}, {"type": "product", "product": "Braided ham"}, {"type": "product", "product": "Brown sugar raisin"}, {"type": "product", "product": "Cheese bites"}, {"type": "product", "product": "Double Cheese Bread x4"}, {"type": "product", "product": "Cheese roll"}, {"type": "product", "product": "Coffee bavarian bun"}, {"type": "product", "product": "Coffee roti roll"}, {"type": "product", "product": "Cream Bread"}, {"type": "product", "product": "Creamy enzaimada"}, {"type": "product", "product": "Custard cream bun"}, {"type": "product", "product": "Enzaimada bites"}, {"type": "product", "product": "Enzaimada rolls"}, {"type": "product", "product": "Flossy meat roll"}, {"type": "product", "product": "Four Seasons"}, {"type": "product", "product": "Garlic bread"}, {"type": "product", "product": "HAM & QUESO"}, {"type": "product", "product": "Ham salad bread"}, {"type": "product", "product": "Hongkong milk bread"}, {"type": "product", "product": "Hotdog with cheese"}, {"type": "product", "product": "Malunggay cheese pandesal"}, {"type": "product", "product": "Malunggay tuna"}, {"type": "product", "product": "Milky baby pandesal"}, {"type": "product", "product": "Milky ube roll"}, {"type": "product", "product": "Premium Cheese Bread"}, {"type": "product", "product": "Mongo loaf"}, {"type": "product", "product": "Mongo roll"}, {"type": "product", "product": "Coco cluster x6"}, {"type": "product", "product": "Pandecoco"}, {"type": "product", "product": "Pineapple delight"}, {"type": "product", "product": "SET1 BM5 (m.w.f)"}, {"type": "product", "product": "SET2 CE5"}, {"type": "product", "product": "SET 3 CE2,BMP3(m.w.f)"}, {"type": "product", "product": "SET 4 FS1,CRR2,MR2"}, {"type": "product", "product": "SET5 BS2,MR1,US2"}, {"type": "product", "product": "Hopia Mongo"}, {"type": "product", "product": "Hopia Ube"}, {"type": "product", "product": "Hopia Container"}, {"type": "product", "product": "Mochi Bread x6"}, {"type": "product", "product": "Special mongo bun"}, {"type": "product", "product": "Special pandesal x9"}, {"type": "product", "product": "Ube enzaimada single"}, {"type": "product", "product": "Ube macapuno loaf"}, {"type": "product", "product": "Ube munchies"}, {"type": "product", "product": "Ube queso pandesal"}, {"type": "product", "product": "Ube stick"}, {"type": "product", "product": "Wheat bread"}, {"type": "product", "product": "Cheese stick bread"}, {"type": "product", "product": "Pizzadog"}, {"type": "product", "product": "Volcanic Cheese Melt"}, {"type": "product", "product": "Pizza round"}, {"type": "product", "product": "BABY ENZAIMADA"}, {"type": "product", "product": "Spicy Chicken Floss"}, {"type": "product", "product": "RAISIN & WALNUT SOUR DOUGH"}, {"type": "product", "product": "Malunggay Pandesal x9"}, {"type": "product", "product": "Premium Cheese Roll"}, {"type": "product", "product": "DULCE de UBE"}, {"type": "product", "product": "CHEESY FLOSSY BAR"}, {"type": "product", "product": "UBE MOCHI BREAD"}, {"type": "product", "product": "MONGO MOCHI BREAD"}, {"type": "product", "product": "DOUBLE MUNCHIES"}, {"type": "product", "product": "BAVARIAN MUNCHIES"}, {"type": "product", "product": "PINEAPPLE MUNCHIES"}, {"type": "product", "product": "RAISIN MINIS"}, {"type": "product", "product": "CINNAMON ROLLS"}, {"type": "product", "product": "Malunggay Cheese Mini"}, {"type": "product", "product": "Paborito Breads x10"}, {"type": "product", "product": "Craving Breads x 6"}, {"type": "product", "product": "HAM AND CHEESE ROLL"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "product": "Banana loaf (New Improved)"}, {"type": "product", "product": "Banana slice"}, {"type": "product", "product": "CHEESY mamon /pc"}, {"type": "product", "product": "Cheese pie"}, {"type": "product", "product": "Chiffon cake"}, {"type": "product", "product": "Choco crinkles"}, {"type": "product", "product": "Choco vanilla"}, {"type": "product", "product": "Flossy chiffon x4"}, {"type": "product", "product": "Fluffy chiffon"}, {"type": "product", "product": "Fudge brownies x12"}, {"type": "product", "product": "Milky egg pie"}, {"type": "product", "product": "Mini cakes x12"}, {"type": "product", "product": "Mocha vanilla"}, {"type": "product", "product": "S'mores fudge x8"}, {"type": "product", "product": "Sossy flossy roll"}, {"type": "product", "product": "Yema Krema"}, {"type": "product", "product": "Egg Pie Whole"}, {"type": "product", "product": "Fudge brownies Single"}, {"type": "product", "product": "Macaroons"}, {"type": "product", "product": "FLUFFY CHIFFON BIG"}, {"type": "product", "product": "LECHE FLAN CAKE"}, {"type": "product", "product": "Mini Jelly Roll"}, {"type": "product", "product": "PREMIUM TAISAN BAR"}, {"type": "product", "product": "FLUFFY CHIFFON SMALL"}, {"type": "product", "product": "Choco Fantasy 6\""}, {"type": "product", "product": "Choco Fantasy AFFORDABLE"}, {"type": "product", "product": "Choco Fantasy 8X12\""}, {"type": "product", "product": "CHOCOLATE CARAMEL AFFORDABLE"}, {"type": "product", "product": "CHOCOLATE CARAMEL 8\""}, {"type": "product", "product": "CHOCOLATE CARAMEL 8X12\""}, {"type": "product", "product": "DOLCE DE LECHE AFFORDABLE"}, {"type": "product", "product": "DOLCE DE LECHE 8\""}, {"type": "product", "product": "DOLCE DE LECHE 8X16\""}, {"type": "product", "product": "Ivory Bloom 6\""}, {"type": "product", "product": "Ivory Bloom 8\""}, {"type": "product", "product": "Ivory Bloom 8X12\""}, {"type": "product", "product": "Kitkat Mousse Cake AFFORDABLE"}, {"type": "product", "product": "Kitkat Mousse Cake 8\""}, {"type": "product", "product": "MANGO SUPREME AFFORDABLE"}, {"type": "product", "product": "MANGO SUPREME 8\""}, {"type": "product", "product": "MOCHA DRIP AFFORDABLE"}, {"type": "product", "product": "MOCHA DRIP 8\""}, {"type": "product", "product": "MOCHALICIOUS AFFORDABLE"}, {"type": "product", "product": "MOCHALICIOUS 8\""}, {"type": "product", "product": "MOCHALICIOUS 8X12\""}, {"type": "product", "product": "NUTELLA CAKE AFFORDABLE"}, {"type": "product", "product": "NUTELLA CAKE 8\""}, {"type": "product", "product": "CHOCO DREAM AFFORDABLE"}, {"type": "product", "product": "Oreo Dream 8\""}, {"type": "product", "product": "SALTED CARAMEL 6\""}, {"type": "product", "product": "SALTED CARAMEL 8\""}, {"type": "product", "product": "Strawberry Shortcake AFFORDABLE"}, {"type": "product", "product": "Strawberry Shortcake 8\""}, {"type": "product", "product": "Ube Halaya AFFORDABLE"}, {"type": "product", "product": "Ube Yum 8\""}, {"type": "product", "product": "UBE LECHE FLAN AFFORDABLE"}, {"type": "product", "product": "UBE LECHE FLAN 8\""}, {"type": "product", "product": "Ube Yum 8x12"}, {"type": "product", "product": "Yema CAKE AFFORDABLE"}, {"type": "product", "product": "Yema Streussel 8\""}, {"type": "product", "product": "CHOCO MOCHA DUET"}, {"type": "separator"}, {"type": "product", "product": "ADOBO PEANUT POUCH"}, {"type": "product", "product": "ALMOND JELLY"}, {"type": "product", "product": "ASSTD CANDY/ CHOCOLATES"}, {"type": "product", "product": "ASSTD CHIPS (7 SEAS)"}, {"type": "product", "product": "ASSTD LOLLIPOP"}, {"type": "product", "product": "ASSTD MUSHROOM CHIPS"}, {"type": "product", "product": "ASSTD POLVORON X12"}, {"type": "product", "product": "ATSARA"}, {"type": "product", "product": "BANANA CHIPS BIG"}, {"type": "product", "product": "BARQUILLOS"}, {"type": "product", "product": "BARQUILLOS TUB"}, {"type": "product", "product": "BIG OVEN BROWNIES"}, {"type": "product", "product": "CANDY CANE PER PACK"}, {"type": "product", "product": "CARP SARAP"}, {"type": "product", "product": "CHARACTER SURPRISE"}, {"type": "product", "product": "CHICHA CORN"}, {"type": "product", "product": "CHICHA POP"}, {"type": "product", "product": "CHICHA POP CON."}, {"type": "product", "product": "CHOCO BISCUIT (ORIGO)"}, {"type": "product", "product": "CHOCO BISCUIT STICK"}, {"type": "product", "product": "CHOCO NIPS"}, {"type": "product", "product": "CHUNKY PEANUT BUTTER"}, {"type": "product", "product": "CLASSIC Biscocho"}, {"type": "product", "product": "CREAMY APAS"}, {"type": "product", "product": "DABOY BITE SIZE"}, {"type": "product", "product": "DABOY CHICHARON"}, {"type": "product", "product": "DABOY TRAY BACKFAT"}, {"type": "product", "product": "DAILY NUT"}, {"type": "product", "product": "DAILYPLUS ASST."}, {"type": "product", "product": "DARK/RED VELVET CRINKLES"}, {"type": "product", "product": "DILIS CRISPY / SPICY"}, {"type": "product", "product": "DILIS MIXED"}, {"type": "product", "product": "DINOSAUR EGG BIG"}, {"type": "product", "product": "DINOSAUR EGG SMALL"}, {"type": "product", "product": "DRIED FRUIT"}, {"type": "product", "product": "EGG COINS"}, {"type": "product", "product": "EGG CRACKERS"}, {"type": "product", "product": "ESPASOL"}, {"type": "product", "product": "EVERYDAY MIX NUTS"}, {"type": "product", "product": "FISH CRACKER SMALL"}, {"type": "product", "product": "FLAVORED GARLIC PEANUT"}, {"type": "product", "product": "GARLIC PEANUT POUCH"}, {"type": "product", "product": "GOLD COINS POUCH"}, {"type": "product", "product": "GUMMY CANDY ASSTD. POUCH"}, {"type": "product", "product": "HAMBURGER SQUISHY"}, {"type": "product", "product": "HOPIA KING"}, {"type": "product", "product": "JELLY BEANS"}, {"type": "product", "product": "JUMBO EGG"}, {"type": "product", "product": "JUMBO WHIRL LOLLIPOP"}, {"type": "product", "product": "Kiamoy Pouch"}, {"type": "product", "product": "KIKIAM"}, {"type": "product", "product": "KROPECK SHRIMP"}, {"type": "product", "product": "LECHE FLAN"}, {"type": "product", "product": "LENGUA"}, {"type": "product", "product": "MACARONI CRACKERS"}, {"type": "product", "product": "MIXED NUTS POUCH"}, {"type": "product", "product": "MUNCH ASSRTED"}, {"type": "product", "product": "NACHOS ASSRTED"}, {"type": "product", "product": "OCEAN SERIES"}, {"type": "product", "product": "OGOY"}, {"type": "product", "product": "OGOY STICK"}, {"type": "product", "product": "OTAP"}, {"type": "product", "product": "OTAP NEW"}, {"type": "product", "product": "PABORITA SMALL"}, {"type": "product", "product": "PACENCIA WHITE"}, {"type": "product", "product": "party lollipop"}, {"type": "product", "product": "PEANUT BAR"}, {"type": "product", "product": "PEANUT NOUGAT"}, {"type": "product", "product": "PEANUT POUCH"}, {"type": "product", "product": "PILIPIT BIG X10"}, {"type": "product", "product": "POTATO CHIPS"}, {"type": "product", "product": "RAINBOW MALLOWS"}, {"type": "product", "product": "RED VELVET BROWNIE"}, {"type": "product", "product": "ROASTED CASHEW"}, {"type": "product", "product": "SECO VARIETY"}, {"type": "product", "product": "SHRIMP CRACKERS"}, {"type": "product", "product": "SIOPAO SQUISHY"}, {"type": "product", "product": "SMALL MANTOU"}, {"type": "product", "product": "SPECIAL BISCOCHO"}, {"type": "product", "product": "SPECIAL MONGO BEAN"}, {"type": "product", "product": "SPECIAL PABORITA"}, {"type": "product", "product": "SQUASH SEEDS"}, {"type": "product", "product": "SWEET TAMARIND CANDY"}, {"type": "product", "product": "TAMARIND CANDY"}, {"type": "product", "product": "TEA EGG"}, {"type": "product", "product": "TIKOY HOPIA"}, {"type": "product", "product": "TOAST GARLIC /LESS SUGAR"}, {"type": "product", "product": "TOASTED MAMON"}, {"type": "product", "product": "TOFU ASSORTED FLV."}, {"type": "product", "product": "TORONES POUCH"}, {"type": "product", "product": "TORONES TUB"}, {"type": "product", "product": "URARO"}, {"type": "product", "product": "YEMA MINI PACK"}, {"type": "product", "product": "YEMA TOWER"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "product": "3n1 KAKANIN"}, {"type": "product", "product": "ESPASOL"}, {"type": "product", "product": "KUTSINTA"}, {"type": "product", "product": "PUTO PAO"}, {"type": "product", "product": "SUMAN PINIPIG SMALL"}, {"type": "separator"}, {"type": "product", "product": "PUTO BIG"}, {"type": "product", "product": "PUTO BIGAS"}, {"type": "product", "product": "PUTO SMALL"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "product": "KING'S BOTTLED WATER"}, {"type": "product", "product": "CALAMANSI JUICE (Island)"}, {"type": "product", "product": "COKE in can"}, {"type": "product", "product": "GATORADE 500ML"}, {"type": "product", "product": "HERBAL TEA TAMARIND"}, {"type": "product", "product": "NATURAL SOYA"}, {"type": "product", "product": "NESTEA"}, {"type": "product", "product": "NESTLE CHUCKIE"}, {"type": "product", "product": "PEPSI"}, {"type": "product", "product": "SELECTA MOO"}, {"type": "product", "product": "SIP PURIFIED WATER 1000ml"}, {"type": "product", "product": "SMART C+"}, {"type": "product", "product": "VITAMILK"}, {"type": "product", "product": "ZAMBO CALAMANSI JUICE"}, {"type": "product", "product": "ZESTO BIG"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "product": "EMPANADA BOX"}, {"type": "product", "product": "EMPANADA CONTAINER"}, {"type": "product", "product": "FOUNTAIN CANDLE"}, {"type": "product", "product": "GOLD NUMBER CANDLE"}, {"type": "product", "product": "MILK TEA CUPS 16 oz"}, {"type": "product", "product": "MILK TEA CUPS 22 oz"}, {"type": "product", "product": "PREMIUM CAKE TOPPER60"}, {"type": "product", "product": "SPIRAL CANDLE /PC"}, {"type": "product", "product": "STANDARD CAKETOPPER40"}, {"type": "product", "product": "TEA EGG CONTAINER"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "product": "FOOD PANDA"}, {"type": "product", "product": "GRAB FOOD"}, {"type": "separator"}, {"type": "product", "product": "PARTY CAKES"}, {"type": "separator"}, {"type": "product", "product": "1 DAY BEFORE"}, {"type": "product", "product": "yema cake"}, {"type": "product", "product": "butter cup"}, {"type": "product", "product": "egg pie"}, {"type": "product", "product": "ube egg pie"}, {"type": "product", "product": "ube cheese pandesal"}, {"type": "product", "product": "hotdog buns"}, {"type": "product", "product": "crinkles"}, {"type": "product", "product": "vanilla 8x11"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}];
+let DSIR_PRODUCTS = DSIR_ROWS.filter(r=>r.type==='product').map(r=>r.product);
+let DSIR_NORM = DSIR_PRODUCTS.map(s=>norm(s));
+const directMap = {"cheesy mamon": "CHEESY mamon /pc", "garlic bread toast": "Garlic bread", "chocolate caramel round": "CHOCOLATE CARAMEL AFFORDABLE", "spanish latte large": "MILK TEA CUPS 22 oz", "kings purified water": "KING'S BOTTLED WATER", "assorted candy": "ASSTD CANDY/ CHOCOLATES", "mango supreme round": "MANGO SUPREME AFFORDABLE", "baked chicken empanada x 3": "Baked chicken empanada", "ivory bloom round": "Ivory Bloom 6\"", "mochalicious round": "MOCHALICIOUS AFFORDABLE", "hopia mongo / ube combi x20": "Hopia Mongo", "spanish latte medium": "MILK TEA CUPS 16 oz", "free almond jelly cups": "ALMOND JELLY", "ham & cheese roll": "HAM AND CHEESE ROLL", "flossy chiffon": "Flossy chiffon x4", "almond jelly cup": "ALMOND JELLY", "dolce de leche rnd": "DOLCE DE LECHE AFFORDABLE", "banana loaf": "Banana loaf (New Improved)", "mocha latte large": "MILK TEA CUPS 22 oz", "iced coffee jelly 22oz": "MILK TEA CUPS 22 oz", "smore's fudge": "S'mores fudge x8", "taro lava medium": "MILK TEA CUPS 16 oz", "strawberry matcha large": "MILK TEA CUPS 22 oz", "lemonade duo": "MILK TEA CUPS 22 oz", "paborito breads": "Paborito Breads x10", "mini party cakes": "Mini cakes x12", "mocha drip round": "MILK TEA CUPS 16 oz", "mocha latte medium": "MILK TEA CUPS 16 oz", "add on coffee jelly": "MILK TEA CUPS 22 oz", "caramel macchiato large": "CHOCO MOCHA DUET", "the duet (choco mocha)": "NUTELLA CAKE AFFORDABLE", "nutella affordable": "MILK TEA CUPS 16 oz", "strawberry matcha medium": "CHEESY FLOSSY BAR", "flossy cheese bar": "Kitkat Mousse Cake AFFORDABLE", "kitkat mousse affordable": "FLAVORED GARLIC PEANUT", "flavored peanut": "CHOCO DREAM AFFORDABLE", "choco dream round": "MILK TEA CUPS 16 oz", "caramel macchiato medium": "MILK TEA CUPS 22 oz", "fresh honey lemon": "GUMMY CANDY ASSTD. POUCH", "gummy candy": "DINOSAUR EGG BIG", "dinosaur big": "Choco Fantasy AFFORDABLE", "choco fantasy round": "MILK TEA CUPS 16 oz", "milk tea duo medium": "MILK TEA CUPS 22 oz", "original matcha large": "MILK TEA CUPS 22 oz", "ube yum round": "Ube Halaya AFFORDABLE", "choco fantasy rectangle": "Choco Fantasy AFFORDABLE", "okinawa large": "MILK TEA CUPS 16 oz", "iced coffee jelly 16oz": "MILK TEA CUPS 22 oz", "lemon cucumber": "MILK TEA CUPS 22 oz", "lemon iced tea": "MILK TEA CUPS 16 oz", "salted caramel medium": "MILK TEA CUPS 22 oz", "salted caramel large": "MILK TEA CUPS 16 oz", "strawberry latte medium": "MILK TEA CUPS 16 oz", "original matcha medium": "MILK TEA CUPS 16 oz", "wintermelon medium": "MILK TEA CUPS 16 oz", "dirty matcha large": "MILK TEA CUPS 22 oz", "taro lava large": "MILK TEA CUPS 22 oz", "signature choco large": "MILK TEA CUPS 22 oz", "cucumber lemonade": "MILK TEA CUPS 22 oz", "dirty matcha medium": "MILK TEA CUPS 16 oz", "lemon kalamansi": "MILK TEA CUPS 22 oz", "fresh honey lemonade": "MILK TEA CUPS 22 oz", "coffee roti bun": "Coffee roti roll"};
+
+function refreshDSIRProducts() {
+  DSIR_PRODUCTS = DSIR_ROWS.filter(r=>r.type==='product').map(r=>r.product);
+  DSIR_NORM = DSIR_PRODUCTS.map(s=>norm(s));
+}
+
+let state={salesPivot:null, returnsPivot:null, lastRows:null};
+
+document.getElementById('fileCsv').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  Papa.parse(f, {header:true, skipEmptyLines:true, transformHeader:h=>(h||'').replace(/^\ufeff/,'').trim(),
+    complete:res=>processSales(res.data)});
+});
+
+document.getElementById('fileReturns').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  Papa.parse(f, {header:true, skipEmptyLines:true,
+    complete:res=>{ returnsData = res.data; populateBranches(); clearReturns(); }});
+});
+
+document.getElementById('fileDsir').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(f.name.endsWith('.csv')) {
+    Papa.parse(f, {
+      header:true, skipEmptyLines:true,
+      complete:res=>{ DSIR_ROWS=res.data; refreshDSIRProducts(); setText('importStatus', '✅ DSIR imported successfully'); if(state.salesPivot) processSales(state.lastSalesRows); if(returnsData) { const sel=document.getElementById('branchSelect'); if(sel.value) processReturns(sel.value); } }
+    });
+  } else {
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const data=new Uint8Array(ev.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(ws,{defval:""});
+      DSIR_ROWS=json; refreshDSIRProducts();
+      setText('importStatus', '✅ DSIR imported successfully');
+      if(state.salesPivot) processSales(state.lastSalesRows);
+      const sel=document.getElementById('branchSelect'); if(sel.value) processReturns(sel.value);
+    };
+    reader.readAsArrayBuffer(f);
+  }
+});
+
+function processSales(rows){
+  state.lastSalesRows = rows;
+  let matched=0,fuzzy=0,unmatched=0;
+  const prodMap=new Map(),unMap=new Map(),daySet=new Set();
+  rows.forEach(r=>{
+    const rawName=r['Item']||r['item']||r['Product']||r['product']||'';
+    const rawAdj=r['Adjustment']||r['adjustment']||r['Qty']||r['qty']||'0';
+    const rawDate=r['Date']||r['DATE']||r['date']||'';
+    let adj=toNumber(rawAdj); if(adj>=0) return;
+    const sales=Math.abs(adj);
+    const date=parseDate(rawDate); if(!date) return; daySet.add(date);
+    const itemNorm=norm(rawName);
+    if(directMap[itemNorm]){
+      const mapped=directMap[itemNorm];
+      const idx=DSIR_PRODUCTS.indexOf(mapped);
+      if(idx>=0){ if(!prodMap.has(idx)) prodMap.set(idx,new Map());
+        const inner=prodMap.get(idx); inner.set(date,(inner.get(date)||0)+sales); matched++; return; }
+    }
+    let idx=DSIR_NORM.indexOf(itemNorm);
+    if(idx>=0){ if(!prodMap.has(idx)) prodMap.set(idx,new Map());
+      const inner=prodMap.get(idx); inner.set(date,(inner.get(date)||0)+sales); matched++; return; }
+    let best=-1,bestSim=0;
+    for(let j=0;j<DSIR_NORM.length;j++){const s=sim(itemNorm,DSIR_NORM[j]);if(s>bestSim){bestSim=s;best=j;}}
+    if(bestSim>=0.85 && best>=0){ if(!prodMap.has(best)) prodMap.set(best,new Map());
+      const inner=prodMap.get(best); inner.set(date,(inner.get(date)||0)+sales); fuzzy++; return; }
+    if(!unMap.has(rawName)) unMap.set(rawName,new Map());
+    const inner=unMap.get(rawName); inner.set(date,(inner.get(date)||0)+sales); unmatched++;
+  });
+  const days=[...daySet].sort();
+  const items=DSIR_ROWS.map(r=>r.type==='product'?r.product:'');
+  const isSep=DSIR_ROWS.map(r=>r.type==='separator');
+  const matrix=DSIR_ROWS.map((r,i)=>{if(isSep[i]) return days.map(()=>'');
+    const prodIdx=DSIR_PRODUCTS.indexOf(r.product);const inner=prodMap.get(prodIdx)||new Map();
+    return days.map(d=>inner.get(d)||0);});
+  const totalsCol=matrix.map((row,i)=>isSep[i]?'':row.reduce((a,b)=>a+Number(b||0),0));
+  const totalsRow=days.map((_,j)=>{let s=0;for(let i=0;i<matrix.length;i++){if(isSep[i])continue;s+=Number(matrix[i][j]||0);}return s;});
+  const grandTotal=totalsRow.reduce((a,b)=>a+b,0);
+
+  setText('sumMatched','Matched: '+matched);
+  setText('sumFuzzy','Fuzzy: '+fuzzy);
+  setText('sumUnmatched','Unmatched: '+unmatched);
+  setText('sumTotal','Grand Total: '+grandTotal);
+
+  const tbl=document.getElementById('tbl-sales');
+  let html='<thead><tr><th>Product</th>';
+  days.forEach(d=>{html+='<th>'+d+'</th>';});
+  html+='<th>Row Total</th></tr></thead><tbody>';
+  for(let i=0;i<items.length;i++){ const sep=isSep[i];
+    html+='<tr><td>'+(sep?'':items[i])+'</td>';
+    for(let j=0;j<days.length;j++){const val=sep?'':matrix[i][j];html+='<td>'+(val?val:'')+'</td>';};
+    html+='<td>'+(sep?'':totalsCol[i])+'</td></tr>'; }
+  html+='<tr><td><b>Day Total</b></td>';
+  for(let j=0;j<days.length;j++) html+='<td><b>'+totalsRow[j]+'</b></td>';
+  html+='<td><b>'+grandTotal+'</b></td></tr>';
+  if(unMap.size>0){html+='<tr><td colspan="'+(days.length+2)+'"><b>Unmatched</b></td></tr>';
+    unMap.forEach((map,name)=>{html+='<tr><td>'+name+'</td>';days.forEach(d=>{html+='<td>'+(map.get(d)||0)+'</td>';});html+='<td></td></tr>';});}
+  html+='</tbody>'; tbl.innerHTML=html;
+
+  state.salesPivot = {items,isSep,days,matrix,totalsCol,totalsRow,grandTotal};
+  updateSummary();
+}
+
+let returnsData = null;
+let returnsBranches = [];
+
+function populateBranches(){
+  const sel = document.getElementById('branchSelect');
+  const branchSet = new Set();
+  returnsData.forEach(r=>{ if(r['Source Location']) branchSet.add(String(r['Source Location']).trim()); });
+  returnsBranches = [...branchSet].sort();
+  sel.innerHTML = '<option value="">Select Branch</option>';
+  returnsBranches.forEach(b=>{ const opt=document.createElement('option'); opt.value=b; opt.textContent=b; sel.appendChild(opt); });
+}
+
+document.getElementById('branchSelect').addEventListener('change', e=>{
+  const branch = e.target.value;
+  if(!branch) { clearReturns(); return; }
+  processReturns(branch);
+});
+
+function clearReturns(){
+  setText('sumMatchedRet','Matched: 0');
+  setText('sumFuzzyRet','Fuzzy: 0');
+  setText('sumUnmatchedRet','Unmatched: 0');
+  setText('sumTotalRet','Grand Total: 0');
+  const tbl=document.getElementById('tbl-returns');
+  if(tbl) tbl.innerHTML='<tbody></tbody>';
+  state.returnsPivot = null;
+  updateSummary();
+}
+
+function processReturns(branch){
+  let matched=0,fuzzy=0,unmatched=0;
+  const prodMap=new Map(),unMap=new Map(),daySet=new Set();
+  returnsData.forEach(r=>{
+    if((r['Source Location']||'').trim()!==branch.trim()) return;
+    const rawName=r['Item']||r['item']||'';
+    const rawQty=r['Quantity']||r['quantity']||'0';
+    const rawDate=r['Date Created']||r['date']||'';
+    let qty=toNumber(rawQty); if(qty<=0) return;
+    const date=parseDate(rawDate); if(!date) return; daySet.add(date);
+    const itemNorm=norm(rawName);
+    if(directMap[itemNorm]){
+      const mapped=directMap[itemNorm];
+      const idx=DSIR_PRODUCTS.indexOf(mapped);
+      if(idx>=0){ if(!prodMap.has(idx)) prodMap.set(idx,new Map());
+        const inner=prodMap.get(idx); inner.set(date,(inner.get(date)||0)+qty); matched++; return; }
+    }
+    let idx=DSIR_NORM.indexOf(itemNorm);
+    if(idx>=0){ if(!prodMap.has(idx)) prodMap.set(idx,new Map());
+      const inner=prodMap.get(idx); inner.set(date,(inner.get(date)||0)+qty); matched++; return; }
+    let best=-1,bestSim=0;
+    for(let j=0;j<DSIR_NORM.length;j++){const s=sim(itemNorm,DSIR_NORM[j]);if(s>bestSim){bestSim=s;best=j;}}
+    if(bestSim>=0.85 && best>=0){ if(!prodMap.has(best)) prodMap.set(best,new Map());
+      const inner=prodMap.get(best); inner.set(date,(inner.get(date)||0)+qty); fuzzy++; return; }
+    if(!unMap.has(rawName)) unMap.set(rawName,new Map());
+    const inner=unMap.get(rawName); inner.set(date,(inner.get(date)||0)+qty); unmatched++;
+  });
+  const days=[...daySet].sort();
+  const items=DSIR_ROWS.map(r=>r.type==='product'?r.product:'');
+  const isSep=DSIR_ROWS.map(r=>r.type==='separator');
+  const matrix=DSIR_ROWS.map((r,i)=>{if(isSep[i]) return days.map(()=>'');
+    const prodIdx=DSIR_PRODUCTS.indexOf(r.product);const inner=prodMap.get(prodIdx)||new Map();
+    return days.map(d=>inner.get(d)||0);});
+  const totalsCol=matrix.map((row,i)=>isSep[i]?'':row.reduce((a,b)=>a+Number(b||0),0));
+  const totalsRow=days.map((_,j)=>{let s=0;for(let i=0;i<matrix.length;i++){if(isSep[i])continue;s+=Number(matrix[i][j]||0);}return s;});
+  const grandTotal=totalsRow.reduce((a,b)=>a+b,0);
+
+  setText('sumMatchedRet','Matched: '+matched);
+  setText('sumFuzzyRet','Fuzzy: '+fuzzy);
+  setText('sumUnmatchedRet','Unmatched: '+unmatched);
+  setText('sumTotalRet','Grand Total: '+grandTotal);
+
+  const tbl=document.getElementById('tbl-returns');
+  let html='<thead><tr><th>Product</th>';
+  days.forEach(d=>{html+='<th>'+d+'</th>';});
+  html+='<th>Row Total</th></tr></thead><tbody>';
+  for(let i=0;i<items.length;i++){ const sep=isSep[i];
+    html+='<tr><td>'+(sep?'':items[i])+'</td>';
+    for(let j=0;j<days.length;j++){const val=sep?'':matrix[i][j];html+='<td>'+(val?val:'')+'</td>';};
+    html+='<td>'+(sep?'':totalsCol[i])+'</td></tr>'; }
+  html+='<tr><td><b>Day Total</b></td>';
+  for(let j=0;j<days.length;j++) html+='<td><b>'+totalsRow[j]+'</b></td>';
+  html+='<td><b>'+grandTotal+'</b></td></tr>';
+  if(unMap.size>0){html+='<tr><td colspan="'+(days.length+2)+'"><b>Unmatched</b></td></tr>';
+    unMap.forEach((map,name)=>{html+='<tr><td>'+name+'</td>';days.forEach(d=>{html+='<td>'+(map.get(d)||0)+'</td>';});html+='<td></td></tr>';});}
+  html+='</tbody>'; tbl.innerHTML=html;
+
+  state.returnsPivot = {branch,items,isSep,days,matrix,totalsCol,totalsRow,grandTotal};
+  updateSummary();
+}
+
+function updateSummary(){
+  const sp = state.salesPivot;
+  const rp = state.returnsPivot;
+  if(!sp || !rp){
+    setText('cardTotalSales','0');
+    setText('cardTotalReturns','0');
+    setText('cardNoD','0');
+    setText('cardAvgReturn','0');
+    setText('cardAvgDailySales','0');
+    return;
+  }
+  const setSales = new Set(sp.days);
+  const matchedDays = rp.days.filter(d => setSales.has(d));
+  const NoD = matchedDays.length;
+  let totalSalesMatched = 0, totalReturnsMatched = 0;
+  const salesDayIndex = new Map(sp.days.map((d,i)=>[d,i]));
+  const returnsDayIndex = new Map(rp.days.map((d,i)=>[d,i]));
+  matchedDays.forEach(d=>{
+    totalSalesMatched += sp.totalsRow[salesDayIndex.get(d)] || 0;
+    totalReturnsMatched += rp.totalsRow[returnsDayIndex.get(d)] || 0;
+  });
+  const avgReturn = NoD ? (totalReturnsMatched / NoD) : 0;
+  const avgDailySales = NoD ? ((totalSalesMatched / NoD) - avgReturn) : 0;
+
+  setText('cardTotalSales', String(totalSalesMatched));
+  setText('cardTotalReturns', String(totalReturnsMatched));
+  setText('cardNoD', String(NoD));
+  setText('cardAvgReturn', String(avgReturn));
+  setText('cardAvgDailySales', String(avgDailySales));
+}
+
+document.getElementById('btnSummaryExport').addEventListener('click', ()=>{
+  const sp = state.salesPivot;
+  const rp = state.returnsPivot;
+  if(!sp || !rp){ alert('Please upload Sales and Returns (and select a branch) first.'); return; }
+
+  const salesHeader = ['Product'].concat(sp.days).concat(['Row Total','Total Sales','NoD','Avg Return','Avg Daily Sales']);
+  const rowsSales = [salesHeader];
+  for(let i=0;i<sp.items.length;i++){
+    if(sp.isSep[i]){ rowsSales.push([''].concat(sp.days.map(()=>''),'','','','','')); }
+    else { rowsSales.push([sp.items[i]].concat(sp.matrix[i]).concat([sp.totalsCol[i],'','','',''])); }
+  }
+
+  const setSales = new Set(sp.days);
+  const matchedDays = rp.days.filter(d=>setSales.has(d));
+  const NoD = matchedDays.length;
+  const salesDayIndex = new Map(sp.days.map((d,i)=>[d,i]));
+  const returnsDayIndex = new Map(rp.days.map((d,i)=>[d,i]));
+  let totalSalesMatched = 0, totalReturnsMatched = 0;
+  matchedDays.forEach(d=>{
+    totalSalesMatched += sp.totalsRow[salesDayIndex.get(d)] || 0;
+    totalReturnsMatched += rp.totalsRow[returnsDayIndex.get(d)] || 0;
+  });
+  const avgReturn = NoD ? (totalReturnsMatched/NoD) : 0;
+  const avgDailySales = NoD ? ((totalSalesMatched/NoD) - avgReturn) : 0;
+
+  const summaryRow = ['SUMMARY'].concat(sp.days.map(()=>''))
+                      .concat(['', totalSalesMatched, NoD, avgReturn, avgDailySales]);
+  rowsSales.push(summaryRow);
+
+  const returnsHeader = ['Product'].concat(rp.days).concat(['Row Total']);
+  const rowsReturns = [returnsHeader];
+  for(let i=0;i<rp.items.length;i++){
+    if(rp.isSep[i]){ rowsReturns.push([''].concat(rp.days.map(()=>''),' ')); }
+    else { rowsReturns.push([rp.items[i]].concat(rp.matrix[i]).concat([rp.totalsCol[i]])); }
+  }
+
+  const wsSales = XLSX.utils.aoa_to_sheet(rowsSales);
+  const wsReturns = XLSX.utils.aoa_to_sheet(rowsReturns);
+
+  wsSales['!cols'] = [{wch: 30}].concat(sp.days.map(()=>({wch:10}))).concat([{wch:12},{wch:8},{wch:12},{wch:16}]);
+  wsReturns['!cols'] = [{wch: 30}].concat(rp.days.map(()=>({wch:10}))).concat([{wch:12}]);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsSales, 'Sales');
+  XLSX.utils.book_append_sheet(wb, wsReturns, 'Returns');
+  XLSX.writeFile(wb, 'pmix_summary.xlsx');
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
