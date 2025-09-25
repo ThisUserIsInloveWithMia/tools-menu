@@ -328,6 +328,7 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 
 
+
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
@@ -345,15 +346,12 @@ function generate(){
     let found = arr.find(it => it[1]===name && it[2]===price);
     if(found){
       found[0]+=qty;
-      found[3]+=price*qty;
     } else {
-      if(arr.length < 5){ // only allow new product if <5 lines
-        arr.push([qty,name,price,price*qty]);
+      if(arr.length < 5){
+        arr.push([qty,name,price]);
       } else {
-        // force increase existing product instead
         let pick = arr[Math.floor(Math.random()*arr.length)];
         pick[0]+=qty;
-        pick[3]+=price*qty;
       }
     }
   }
@@ -361,99 +359,76 @@ function generate(){
   function randomBreadReceipt(rem){
     let k = Math.floor(Math.random()*6)+1;
     let pool=[...breadsArr]; pool.sort(()=>Math.random()-0.5);
-    let items=[], gross=0;
+    let items=[];
     for(let i=0;i<pool.length&&items.length<k;i++){
       let [n,p]=pool[i];
       let qty = Math.floor(Math.random()*3)+1;
-      let cost = p*qty;
-      if(gross+cost <= rem){
+      if((qty*p) <= rem){
         addItem(items, qty, n, p);
-        gross+=cost;
       }
     }
-    return {items,gross};
+    return {items};
   }
 
   function makeCakeReceipt(){
     let [n,p]=cakesArr[Math.floor(Math.random()*cakesArr.length)];
-    return {items:[[1,n,p,p]],gross:p,cake:true};
+    return {items:[[1,n,p]],cake:true};
   }
 
-  while(running < target-200 && receipts.length < approx-1){
+  while(receipts.length < approx-1 && running < target-200){
     let rem = target-running;
     let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
-    if(cand.items.length && running+cand.gross <= target){
-      receipts.push({...cand,num:current++});
-      running+=cand.gross;
+    if(cand.items.length){
+      cand.gross = cand.items.reduce((s,it)=>s+(it[0]*it[2]),0);
+      if(running+cand.gross <= target){
+        cand.num=current++;
+        receipts.push(cand);
+        running+=cand.gross;
+      }
     } else break;
   }
 
   let remainder = +(target-running).toFixed(2);
+  if(remainder < 90 || remainder > 110){ remainder = 100; }
 
-  if(remainder > 110){
-    let safety=0;
-    while(remainder > 110 && safety<2000){
-      for(let i=0;i<receipts.length && remainder>110;i++){
-        if(receipts[i].cake) continue;
-        let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
-        let qty = Math.floor(Math.random()*5)+1;
-        let addCost = p*qty;
-        if(running+addCost <= target){
-          addItem(receipts[i].items, qty, n, p);
-          receipts[i].gross += addCost;
-          running += addCost;
-          remainder -= addCost;
-        }
-      }
-      safety++;
-    }
-  }
-
-  if(remainder < 90 || remainder > 110){
-    remainder = 100;
-  }
-
-  let finalItems=[[1,"Rounding Breads",remainder,remainder]];
+  let finalItems=[[1,"Rounding Breads",remainder]];
   receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
   running=+(running+remainder).toFixed(2);
 
-  // Correct rounding if difference exists
   let diff=+(running-target).toFixed(2);
   if(diff!==0){
     let roundingReceipt = receipts[receipts.length-1];
-    let newGross = +(roundingReceipt.gross - diff).toFixed(2);
+    let newGross = +(roundingReceipt.items[0][2]-diff).toFixed(2);
     if(newGross < 0) newGross = 0;
-    roundingReceipt.items = [[1,"Rounding Breads",newGross,newGross]];
-    roundingReceipt.gross = newGross;
-    running = +(running - diff).toFixed(2);
+    roundingReceipt.items=[[1,"Rounding Breads",newGross]];
+    roundingReceipt.gross=newGross;
+    running = +(running-diff).toFixed(2);
   }
 
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
     const card=document.createElement("div");
-    card.className="receipt-card"+(idx%2?" alt":"")+(r.rounding?" rounding":"");
+    card.className="receipt-card"+(r.rounding?" rounding":"");
     const header=document.createElement("div");
     header.className="receipt-header";
     header.textContent = r.rounding?`🔶 Receipt ${r.num} (Rounding)`: `Receipt ${r.num}${r.cake?" — Cake Only":""}`;
     card.appendChild(header);
     let tbodyHTML="";
+    let grossCheck=0;
     r.items.forEach(it=>{
-  const row=document.createElement("div");
-  row.className="row-line";
-  let lineTotal = it[0] * it[2]; // recalc every time
-  row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${lineTotal.toFixed(2)}`;
-  card.appendChild(row);
-  tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(lineTotal)}</td></tr>`;
-});
+      const row=document.createElement("div");
+      row.className="row-line";
+      let lineTotal = it[0]*it[2];
+      grossCheck+=lineTotal;
+      row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${lineTotal.toFixed(2)}`;
+      card.appendChild(row);
+      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(lineTotal)}</td></tr>`;
+    });
+    r.gross = grossCheck;
     const vat=vatFromGross(r.gross), net=netFromGross(r.gross);
     card.innerHTML+=`<div class="row-line">Less: VAT (12%) = ${money(vat)}</div>`;
     card.innerHTML+=`<div class="row-line">Net of VAT = ${money(net)}</div>`;
     card.innerHTML+=`<div class="row-line"><b>Gross Total: ${money(r.gross)}</b></div>`;
-    tbodyHTML+=`<tr><td colspan="3">Less: VAT (12%)</td><td>${money(vat)}</td></tr>`;
-    tbodyHTML+=`<tr><td colspan="3">Net of VAT</td><td>${money(net)}</td></tr>`;
-    tbodyHTML+=`<tr class="gross-row"><td colspan="3">Gross Total</td><td>${money(r.gross)}</td></tr>`;
-    const tableHTML=`<table class="receipt-table"><thead><tr><th>Qty</th><th>Product</th><th>Price</th><th>Total</th></tr></thead><tbody>${tbodyHTML}</tbody></table>`;
-    card.innerHTML+=tableHTML;
     wrap.appendChild(card);
   });
   const diffFinal=+(running-target).toFixed(2);
@@ -461,8 +436,6 @@ function generate(){
   summary.className="summary-card";
   summary.innerHTML=`PROJECT SUMMARY<br>Start: ${start} – End: ${current}<br>Receipts: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(running)}<br>Difference: ${diffFinal>0?"+":""}${money(diffFinal)}`;
   wrap.appendChild(summary);
-  projectSummary=summary.innerText;
-  $("#reportBtn").disabled=false;
 }
 // ===== Copy / Print / Report =====
 function copyAll(){
