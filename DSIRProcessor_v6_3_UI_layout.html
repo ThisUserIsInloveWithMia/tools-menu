@@ -185,6 +185,120 @@ h1#mainTitle {
 }
 #logsBody div { border-bottom:1px dashed var(--border) !important; padding:3px 0; }
 #logsBody div:last-child{ border-bottom:0 !important; }
+</style><style>
+/* === DSIR Harvester v6.3 Polished UI (logic untouched) === */
+
+/* Buttons */
+button, .btn {
+  background: transparent;
+  border: 2px solid var(--accent, #4f46e5);
+  color: var(--accent, #4f46e5);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+button:hover, .btn:hover {
+  background: var(--accent, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(79,70,229,0.35);
+  transform: translateY(-1px);
+}
+
+/* Panels and cards */
+.card, .panel {
+  background: var(--panel, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+/* Modals */
+.modal .panel {
+  max-width: 700px;
+  margin: auto;
+}
+
+/* Results Table */
+#resultsCard {
+  margin: 0 auto 30px;
+  width: min(1200px, 95%);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+#resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#resultsTable thead {
+  background: var(--accent, #4f46e5);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+#resultsTable th, #resultsTable td {
+  padding: 12px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+#resultsTable tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+#resultsTable tbody tr:hover {
+  background: #eef2ff;
+}
+
+/* Counters */
+.counter {
+  border: 2px solid var(--border, #e5e7eb);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+.counter.success { border-color: #16a34a; color: #16a34a; }
+.counter.warn { border-color: #f59e0b; color: #f59e0b; }
+.counter.danger { border-color: #dc2626; color: #dc2626; }
+.counter.show { opacity: 1; visibility: visible; }
+
+/* Sidebar */
+#sidebar {
+  background: #111827;
+  color: #fff;
+}
+#sidebar header {
+  font-weight: 700;
+  font-size: 16px;
+  padding: 18px;
+  border-bottom: 1px solid #1f2937;
+}
+#sidebar .sub {
+  font-size: 12px;
+  padding: 0 18px 14px;
+  color: #9ca3af;
+  border-bottom: 1px solid #1f2937;
+  text-align: center;
+}
+#sidebar .menu .btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #1f2937;
+  color: #fff;
+}
+#sidebar .menu .btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* Logs and About Modals */
+#logsBody, #aboutModal .panel {
+  background: #f9fafb;
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text, #111);
+}
 </style></head>
 <body><button id="menuToggle">☰ Menu</button>
 <h1 id="mainTitle" style="text-align:center; font-size:2em; font-weight:700; margin:20px 0;">DSIR Processor</h1><div id="counters"><div class="counter success" id="exactBadge"></div><div class="counter warn" id="fuzzyBadge"></div><div class="counter danger" id="unmatchedBadge"></div></div>
@@ -217,7 +331,71 @@ h1#mainTitle {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const DSIR = [{"type": "product", "code": "600003", "category": "BREADS", "product": "Asado roll"}, {"type": "product", "code": "600004", "category": "BREADS", "product": "Asado square"}, {"type": "product", "code": "600005", "category": "BREADS", "product": "CHEESE BREAD x6"}, {"type": "product", "code": "600007", "category": "BREADS", "product": "Baked chicken empanada"}, {"type": "product", "code": "600008", "category": "BREADS", "product": "Braided ham"}, {"type": "product", "code": "600009", "category": "BREADS", "product": "Brown sugar raisin"}, {"type": "product", "code": "600011", "category": "BREADS", "product": "Cheese bites"}, {"type": "product", "code": "600012", "category": "BREADS", "product": "Double Cheese Bread x4"}, {"type": "product", "code": "600013", "category": "BREADS", "product": "Cheese roll"}, {"type": "product", "code": "690022", "category": "BREADS", "product": "Coffee bavarian bun"}, {"type": "product", "code": "600016", "category": "BREADS", "product": "Coffee roti roll"}, {"type": "product", "code": "", "category": "BREADS", "product": "Cream Bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "Creamy enzaimada"}, {"type": "product", "code": "", "category": "BREADS", "product": "Custard cream bun"}, {"type": "product", "code": "", "category": "BREADS", "product": "Enzaimada bites"}, {"type": "product", "code": "", "category": "BREADS", "product": "Enzaimada rolls"}, {"type": "product", "code": "", "category": "BREADS", "product": "Flossy meat roll"}, {"type": "product", "code": "", "category": "BREADS", "product": "Four Seasons"}, {"type": "product", "code": "", "category": "BREADS", "product": "Garlic bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "HAM & QUESO"}, {"type": "product", "code": "", "category": "BREADS", "product": "Ham salad bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "Hongkong milk bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "Hotdog with cheese"}, {"type": "product", "code": "", "category": "BREADS", "product": "Malunggay cheese pandesal"}, {"type": "product", "code": "", "category": "BREADS", "product": "Malunggay tuna"}, {"type": "product", "code": "", "category": "BREADS", "product": "Milky baby pandesal"}, {"type": "product", "code": "", "category": "BREADS", "product": "Milky ube roll"}, {"type": "product", "code": "", "category": "BREADS", "product": "Premium Cheese Bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "Mongo loaf"}, {"type": "product", "code": "", "category": "BREADS", "product": "Mongo roll"}, {"type": "product", "code": "", "category": "BREADS", "product": "Coco cluster x6"}, {"type": "product", "code": "", "category": "BREADS", "product": "Pandecoco"}, {"type": "product", "code": "", "category": "BREADS", "product": "Pineapple delight"}, {"type": "product", "code": "", "category": "BREADS", "product": "SET1 BM5 (m.w.f)"}, {"type": "product", "code": "", "category": "BREADS", "product": "SET2 CE5"}, {"type": "product", "code": "610000", "category": "BREADS", "product": "SET 3 CE2,BMP3(m.w.f)"}, {"type": "product", "code": "", "category": "BREADS", "product": "SET 4 FS1,CRR2,MR2"}, {"type": "product", "code": "", "category": "BREADS", "product": "SET5 BS2,MR1,US2"}, {"type": "product", "code": "610006", "category": "BREADS", "product": "Hopia Mongo"}, {"type": "product", "code": "610007", "category": "BREADS", "product": "Hopia Ube"}, {"type": "product", "code": "610009", "category": "BREADS", "product": "Hopia Container"}, {"type": "product", "code": "610010", "category": "BREADS", "product": "Mochi Bread x6"}, {"type": "product", "code": "", "category": "BREADS", "product": "Special mongo bun"}, {"type": "product", "code": "610011", "category": "BREADS", "product": "Special pandesal x9"}, {"type": "product", "code": "610014", "category": "BREADS", "product": "Ube enzaimada single"}, {"type": "product", "code": "610017", "category": "BREADS", "product": "Ube macapuno loaf"}, {"type": "product", "code": "", "category": "BREADS", "product": "Ube munchies"}, {"type": "product", "code": "", "category": "BREADS", "product": "Ube queso pandesal"}, {"type": "product", "code": "610019", "category": "BREADS", "product": "Ube stick"}, {"type": "product", "code": "", "category": "BREADS", "product": "Wheat bread"}, {"type": "product", "code": "", "category": "BREADS", "product": "Cheese stick bread"}, {"type": "product", "code": "610021", "category": "BREADS", "product": "Pizzadog"}, {"type": "product", "code": "", "category": "BREADS", "product": "Volcanic Cheese Melt"}, {"type": "product", "code": "", "category": "BREADS", "product": "Pizza round"}, {"type": "product", "code": "", "category": "BREADS", "product": "BABY ENZAIMADA"}, {"type": "product", "code": "", "category": "BREADS", "product": "Spicy Chicken Floss"}, {"type": "product", "code": "620002", "category": "BREADS", "product": "RAISIN & WALNUT SOUR DOUGH"}, {"type": "product", "code": "620003", "category": "BREADS", "product": "Malunggay Pandesal x9"}, {"type": "product", "code": "620004", "category": "BREADS", "product": "Premium Cheese Roll"}, {"type": "product", "code": "620005", "category": "BREADS", "product": "DULCE de UBE"}, {"type": "product", "code": "620008", "category": "BREADS", "product": "CHEESY FLOSSY BAR"}, {"type": "product", "code": "", "category": "BREADS", "product": "UBE MOCHI BREAD"}, {"type": "product", "code": "", "category": "BREADS", "product": "MONGO MOCHI BREAD"}, {"type": "product", "code": "", "category": "BREADS", "product": "DOUBLE MUNCHIES"}, {"type": "product", "code": "", "category": "BREADS", "product": "BAVARIAN MUNCHIES"}, {"type": "product", "code": "", "category": "BREADS", "product": "PINEAPPLE MUNCHIES"}, {"type": "product", "code": "", "category": "BREADS", "product": "RAISIN MINIS"}, {"type": "product", "code": "630000", "category": "BREADS", "product": "CINNAMON ROLLS"}, {"type": "product", "code": "", "category": "BREADS", "product": "Malunggay Cheese Mini"}, {"type": "product", "code": "", "category": "BREADS", "product": "Paborito Breads x10"}, {"type": "product", "code": "", "category": "BREADS", "product": "Craving Breads x 6"}, {"type": "product", "code": "", "category": "BREADS", "product": "HAM AND CHEESE ROLL"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "code": "630007", "category": "PASTRIES", "product": "Banana loaf (New Improved)"}, {"type": "product", "code": "630008", "category": "PASTRIES", "product": "Banana slice"}, {"type": "product", "code": "630010", "category": "PASTRIES", "product": "CHEESY mamon /pc"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Cheese pie"}, {"type": "product", "code": "630013", "category": "PASTRIES", "product": "Chiffon cake"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Choco crinkles"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Choco vanilla"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Flossy chiffon x4"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Fluffy chiffon"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Fudge brownies x12"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Milky egg pie"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Mini cakes x12"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Mocha vanilla"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "S'mores fudge x8"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Sossy flossy roll"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Yema Krema"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Egg Pie Whole"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Fudge brownies Single"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "Macaroons"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "FLUFFY CHIFFON BIG"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "LECHE FLAN CAKE"}, {"type": "product", "code": "640001", "category": "PASTRIES", "product": "Mini Jelly Roll"}, {"type": "product", "code": "", "category": "PASTRIES", "product": "PREMIUM TAISAN BAR"}, {"type": "product", "code": "640003", "category": "PASTRIES", "product": "FLUFFY CHIFFON SMALL"}, {"type": "product", "code": "640005", "category": "CAKES", "product": "Choco Fantasy 6\""}, {"type": "product", "code": "640007", "category": "CAKES", "product": "Choco Fantasy AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Choco Fantasy 8X12\""}, {"type": "product", "code": "", "category": "CAKES", "product": "CHOCOLATE CARAMEL AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "CHOCOLATE CARAMEL 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "CHOCOLATE CARAMEL 8X12\""}, {"type": "product", "code": "", "category": "CAKES", "product": "DOLCE DE LECHE AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "DOLCE DE LECHE 8\""}, {"type": "product", "code": "680004", "category": "CAKES", "product": "DOLCE DE LECHE 8X16\""}, {"type": "product", "code": "680005", "category": "CAKES", "product": "Ivory Bloom 6\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Ivory Bloom 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Ivory Bloom 8X12\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Kitkat Mousse Cake AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Kitkat Mousse Cake 8\""}, {"type": "product", "code": "690016", "category": "CAKES", "product": "MANGO SUPREME AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "MANGO SUPREME 8\""}, {"type": "product", "code": "660006", "category": "CAKES", "product": "MOCHA DRIP AFFORDABLE"}, {"type": "product", "code": "660007", "category": "CAKES", "product": "MOCHA DRIP 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "MOCHALICIOUS AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "MOCHALICIOUS 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "MOCHALICIOUS 8X12\""}, {"type": "product", "code": "", "category": "CAKES", "product": "NUTELLA CAKE AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "NUTELLA CAKE 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "CHOCO DREAM AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Oreo Dream 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "SALTED CARAMEL 6\""}, {"type": "product", "code": "", "category": "CAKES", "product": "SALTED CARAMEL 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Strawberry Shortcake AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Strawberry Shortcake 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Ube Halaya AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Ube Yum 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "UBE LECHE FLAN AFFORDABLE"}, {"type": "product", "code": "690025", "category": "CAKES", "product": "UBE LECHE FLAN 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "Ube Yum 8x12"}, {"type": "product", "code": "", "category": "CAKES", "product": "Yema CAKE AFFORDABLE"}, {"type": "product", "code": "", "category": "CAKES", "product": "Yema Streussel 8\""}, {"type": "product", "code": "", "category": "CAKES", "product": "CHOCO MOCHA DUET"}, {"type": "separator"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ADOBO PEANUT POUCH"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ALMOND JELLY"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ASSTD CANDY/ CHOCOLATES"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ASSTD CHIPS (7 SEAS)"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ASSTD LOLLIPOP"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ASSTD MUSHROOM CHIPS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ASSTD POLVORON X12"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ATSARA"}, {"type": "product", "code": "", "category": "OTHERS", "product": "BANANA CHIPS BIG"}, {"type": "product", "code": "", "category": "OTHERS", "product": "BARQUILLOS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "BARQUILLOS TUB"}, {"type": "product", "code": "", "category": "OTHERS", "product": "BIG OVEN BROWNIES"}, {"type": "product", "code": "", "category": "OTHERS", "product": "CANDY CANE PER PACK"}, {"type": "product", "code": "", "category": "OTHERS", "product": "CARP SARAP"}, {"type": "product", "code": "610025", "category": "OTHERS", "product": "CHARACTER SURPRISE"}, {"type": "product", "code": "610026", "category": "OTHERS", "product": "CHICHA CORN"}, {"type": "product", "code": "610027", "category": "OTHERS", "product": "CHICHA POP"}, {"type": "product", "code": "610028", "category": "OTHERS", "product": "CHICHA POP CON."}, {"type": "product", "code": "610029", "category": "OTHERS", "product": "CHOCO BISCUIT (ORIGO)"}, {"type": "product", "code": "610030", "category": "OTHERS", "product": "CHOCO BISCUIT STICK"}, {"type": "product", "code": "610031", "category": "OTHERS", "product": "CHOCO NIPS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "CHUNKY PEANUT BUTTER"}, {"type": "product", "code": "610032", "category": "OTHERS", "product": "CLASSIC Biscocho"}, {"type": "product", "code": "610033", "category": "OTHERS", "product": "CREAMY APAS"}, {"type": "product", "code": "610035", "category": "OTHERS", "product": "DABOY BITE SIZE"}, {"type": "product", "code": "610037", "category": "OTHERS", "product": "DABOY CHICHARON"}, {"type": "product", "code": "610038", "category": "OTHERS", "product": "DABOY TRAY BACKFAT"}, {"type": "product", "code": "", "category": "OTHERS", "product": "DAILY NUT"}, {"type": "product", "code": "", "category": "OTHERS", "product": "DAILYPLUS ASST."}, {"type": "product", "code": "", "category": "OTHERS", "product": "DARK/RED VELVET CRINKLES"}, {"type": "product", "code": "", "category": "OTHERS", "product": "DILIS CRISPY / SPICY"}, {"type": "product", "code": "620013", "category": "OTHERS", "product": "DILIS MIXED"}, {"type": "product", "code": "620014", "category": "OTHERS", "product": "DINOSAUR EGG BIG"}, {"type": "product", "code": "620015", "category": "OTHERS", "product": "DINOSAUR EGG SMALL"}, {"type": "product", "code": "620016", "category": "OTHERS", "product": "DRIED FRUIT"}, {"type": "product", "code": "620017", "category": "OTHERS", "product": "EGG COINS"}, {"type": "product", "code": "620018", "category": "OTHERS", "product": "EGG CRACKERS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ESPASOL"}, {"type": "product", "code": "", "category": "OTHERS", "product": "EVERYDAY MIX NUTS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "FISH CRACKER SMALL"}, {"type": "product", "code": "630030", "category": "OTHERS", "product": "FLAVORED GARLIC PEANUT"}, {"type": "product", "code": "630031", "category": "OTHERS", "product": "GARLIC PEANUT POUCH"}, {"type": "product", "code": "", "category": "OTHERS", "product": "GOLD COINS POUCH"}, {"type": "product", "code": "", "category": "OTHERS", "product": "GUMMY CANDY ASSTD. POUCH"}, {"type": "product", "code": "630033", "category": "OTHERS", "product": "HAMBURGER SQUISHY"}, {"type": "product", "code": "630034", "category": "OTHERS", "product": "HOPIA KING"}, {"type": "product", "code": "", "category": "OTHERS", "product": "JELLY BEANS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "JUMBO EGG"}, {"type": "product", "code": "", "category": "OTHERS", "product": "JUMBO WHIRL LOLLIPOP"}, {"type": "product", "code": "630035", "category": "OTHERS", "product": "Kiamoy Pouch"}, {"type": "product", "code": "", "category": "OTHERS", "product": "KIKIAM"}, {"type": "product", "code": "630037", "category": "OTHERS", "product": "KROPECK SHRIMP"}, {"type": "product", "code": "", "category": "OTHERS", "product": "LECHE FLAN"}, {"type": "product", "code": "630039", "category": "OTHERS", "product": "LENGUA"}, {"type": "product", "code": "", "category": "OTHERS", "product": "MACARONI CRACKERS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "MIXED NUTS POUCH"}, {"type": "product", "code": "630043", "category": "OTHERS", "product": "MUNCH ASSRTED"}, {"type": "product", "code": "630045", "category": "OTHERS", "product": "NACHOS ASSRTED"}, {"type": "product", "code": "", "category": "OTHERS", "product": "OCEAN SERIES"}, {"type": "product", "code": "", "category": "OTHERS", "product": "OGOY"}, {"type": "product", "code": "", "category": "OTHERS", "product": "OGOY STICK"}, {"type": "product", "code": "", "category": "OTHERS", "product": "OTAP"}, {"type": "product", "code": "640008", "category": "OTHERS", "product": "OTAP NEW"}, {"type": "product", "code": "640009", "category": "OTHERS", "product": "PABORITA SMALL"}, {"type": "product", "code": "640010", "category": "OTHERS", "product": "PACENCIA WHITE"}, {"type": "product", "code": "", "category": "OTHERS", "product": "party lollipop"}, {"type": "product", "code": "", "category": "OTHERS", "product": "PEANUT BAR"}, {"type": "product", "code": "640011", "category": "OTHERS", "product": "PEANUT NOUGAT"}, {"type": "product", "code": "", "category": "OTHERS", "product": "PEANUT POUCH"}, {"type": "product", "code": "650025", "category": "OTHERS", "product": "PILIPIT BIG X10"}, {"type": "product", "code": "650026", "category": "OTHERS", "product": "POTATO CHIPS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "RAINBOW MALLOWS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "RED VELVET BROWNIE"}, {"type": "product", "code": "", "category": "OTHERS", "product": "ROASTED CASHEW"}, {"type": "product", "code": "650028", "category": "OTHERS", "product": "SECO VARIETY"}, {"type": "product", "code": "650029", "category": "OTHERS", "product": "SHRIMP CRACKERS"}, {"type": "product", "code": "", "category": "OTHERS", "product": "SIOPAO SQUISHY"}, {"type": "product", "code": "", "category": "OTHERS", "product": "SMALL MANTOU"}, {"type": "product", "code": "", "category": "OTHERS", "product": "SPECIAL BISCOCHO"}, {"type": "product", "code": "", "category": "OTHERS", "product": "SPECIAL MONGO BEAN"}, {"type": "product", "code": "650030", "category": "OTHERS", "product": "SPECIAL PABORITA"}, {"type": "product", "code": "650031", "category": "OTHERS", "product": "SQUASH SEEDS"}, {"type": "product", "code": "650032", "category": "OTHERS", "product": "SWEET TAMARIND CANDY"}, {"type": "product", "code": "650033", "category": "OTHERS", "product": "TAMARIND CANDY"}, {"type": "product", "code": "", "category": "OTHERS", "product": "TEA EGG"}, {"type": "product", "code": "800002", "category": "OTHERS", "product": "TIKOY HOPIA"}, {"type": "product", "code": "", "category": "OTHERS", "product": "TOAST GARLIC /LESS SUGAR"}, {"type": "product", "code": "", "category": "OTHERS", "product": "TOASTED MAMON"}, {"type": "product", "code": "", "category": "OTHERS", "product": "TOFU ASSORTED FLV."}, {"type": "product", "code": "", "category": "OTHERS", "product": "TORONES POUCH"}, {"type": "product", "code": "", "category": "OTHERS", "product": "TORONES TUB"}, {"type": "product", "code": "", "category": "OTHERS", "product": "URARO"}, {"type": "product", "code": "", "category": "OTHERS", "product": "YEMA MINI PACK"}, {"type": "product", "code": "", "category": "OTHERS", "product": "YEMA TOWER"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "code": "", "category": "ROSALIE", "product": "3n1 KAKANIN"}, {"type": "product", "code": "", "category": "ROSALIE", "product": "ESPASOL"}, {"type": "product", "code": "", "category": "ROSALIE", "product": "KUTSINTA"}, {"type": "product", "code": "", "category": "ROSALIE", "product": "PUTO PAO"}, {"type": "product", "code": "", "category": "ROSALIE", "product": "SUMAN PINIPIG SMALL"}, {"type": "separator"}, {"type": "product", "code": "", "category": "PUTO", "product": "PUTO BIG"}, {"type": "product", "code": "", "category": "PUTO", "product": "PUTO BIGAS"}, {"type": "product", "code": "", "category": "PUTO", "product": "PUTO SMALL"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "KING'S BOTTLED WATER"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "CALAMANSI JUICE (Island)"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "COKE in can"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "GATORADE 500ML"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "HERBAL TEA TAMARIND"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "NATURAL SOYA"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "NESTEA"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "NESTLE CHUCKIE"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "PEPSI"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "SELECTA MOO"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "SIP PURIFIED WATER 1000ml"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "SMART C+"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "VITAMILK"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "ZAMBO CALAMANSI JUICE"}, {"type": "product", "code": "", "category": "BEVERAGE", "product": "ZESTO BIG"}, {"type": "separator"}, {"type": "separator"}, {"type": "product", "code": "", "category": "MISC", "product": "EMPANADA BOX"}, {"type": "product", "code": "", "category": "MISC", "product": "EMPANADA CONTAINER"}, {"type": "product", "code": "", "category": "MISC", "product": "FOUNTAIN CANDLE"}, {"type": "product", "code": "", "category": "MISC", "product": "GOLD NUMBER CANDLE"}, {"type": "product", "code": "", "category": "MISC", "product": "MILK TEA CUPS 16 oz"}, {"type": "product", "code": "", "category": "MISC", "product": "MILK TEA CUPS 22 oz"}, {"type": "product", "code": "", "category": "MISC", "product": "PREMIUM CAKE TOPPER60"}, {"type": "product", "code": "", "category": "MISC", "product": "SPIRAL CANDLE /PC"}, {"type": "product", "code": "200366", "category": "MISC", "product": "STANDARD CAKETOPPER40"}, {"type": "product", "code": "200367", "category": "MISC", "product": "TEA EGG CONTAINER"}];
-const directMap = {"mini party cakes": "Mini cakes x12", "mocha drip round": "Mocha Drip Affordable", "the duet (choco mocha)": "CHOCO MOCHA DUET", "hopia mongo / ube combi  x20": "Hopia Mongo", "garlic bread toast": "Garlic bread", "free almond jelly cups": "ALMOND JELLY", "flossy cheese bar": "CHEESY FLOSSY BAR", "assorted candy": "ASSTD CANDY/ CHOCOLATES", "flavored peanut": "FLAVORED GARLIC PEANUT", "banana loaf": "Banana loaf (New Improved)", "kings purified water": "SIP PURIFIED WATER 1000ml", "choco dream round": "CHOCO DREAM AFFORDABLE", "smore's fudge": "S'mores fudge x8", "gummy candy": "GUMMY CANDY ASSTD. POUCH", "choco fantasy round": "Choco Fantasy AFFORDABLE"};
+const directMap = {
+  "cheesy mamon": "CHEESY mamon /pc",
+  "garlic bread toast": "Garlic bread",
+  "chocolate caramel round": "CHOCOLATE CARAMEL AFFORDABLE",
+  "spanish latte large": "MILK TEA CUPS 22 oz",
+  "kings purified water": "KING'S BOTTLED WATER",
+  "assorted candy": "ASSTD CANDY/ CHOCOLATES",
+  "mango supreme round": "MANGO SUPREME AFFORDABLE",
+  "baked chicken empanada x 3": "Baked chicken empanada",
+  "ivory bloom round": "Ivory Bloom 6\"",
+  "mochalicious round": "MOCHALICIOUS AFFORDABLE",
+  "hopia mongo / ube combi x20": "Hopia Mongo",
+  "spanish latte medium": "MILK TEA CUPS 16 oz",
+  "free almond jelly cups": "ALMOND JELLY",
+  "ham & cheese roll": "HAM AND CHEESE ROLL",
+  "flossy chiffon": "Flossy chiffon x4",
+  "almond jelly cup": "ALMOND JELLY",
+  "dolce de leche rnd": "DOLCE DE LECHE AFFORDABLE",
+  "banana loaf": "Banana loaf (New Improved)",
+  "mocha latte large": "MILK TEA CUPS 22 oz",
+  "iced coffee jelly 22oz": "MILK TEA CUPS 22 oz",
+  "smore's fudge": "S'mores fudge x8",
+  "taro lava medium": "MILK TEA CUPS 16 oz",
+  "strawberry matcha large": "MILK TEA CUPS 22 oz",
+  "lemonade duo": "MILK TEA CUPS 22 oz",
+  "paborito breads": "Paborito Breads x10",
+  "mini party cakes": "Mini cakes x12",
+  "mocha drip round": "MILK TEA CUPS 16 oz",
+  "mocha latte medium": "MILK TEA CUPS 16 oz",
+  "add on coffee jelly": "MILK TEA CUPS 22 oz",
+  "caramel macchiato large": "CHOCO MOCHA DUET",
+  "the duet (choco mocha)": "NUTELLA CAKE AFFORDABLE",
+  "nutella affordable": "MILK TEA CUPS 16 oz",
+  "strawberry matcha medium": "CHEESY FLOSSY BAR",
+  "flossy cheese bar": "Kitkat Mousse Cake AFFORDABLE",
+  "kitkat mousse affordable": "FLAVORED GARLIC PEANUT",
+  "flavored peanut": "CHOCO DREAM AFFORDABLE",
+  "choco dream round": "MILK TEA CUPS 16 oz",
+  "caramel macchiato medium": "MILK TEA CUPS 22 oz",
+  "fresh honey lemon": "GUMMY CANDY ASSTD. POUCH",
+  "gummy candy": "DINOSAUR EGG BIG",
+  "dinosaur big": "Choco Fantasy AFFORDABLE",
+  "choco fantasy round": "MILK TEA CUPS 16 oz",
+  "milk tea duo medium": "MILK TEA CUPS 22 oz",
+  "original matcha large": "MILK TEA CUPS 22 oz",
+  "ube yum round": "Ube Halaya AFFORDABLE",
+  "choco fantasy rectangle": "Choco Fantasy AFFORDABLE",
+  "okinawa large": "MILK TEA CUPS 16 oz",
+  "iced coffee jelly 16oz": "MILK TEA CUPS 22 oz",
+  "lemon cucumber": "MILK TEA CUPS 22 oz",
+  "lemon iced tea": "MILK TEA CUPS 16 oz",
+  "salted caramel medium": "MILK TEA CUPS 22 oz",
+  "salted caramel large": "MILK TEA CUPS 16 oz",
+  "strawberry latte medium": "MILK TEA CUPS 16 oz",
+  "original matcha medium": "MILK TEA CUPS 16 oz",
+  "wintermelon medium": "MILK TEA CUPS 16 oz",
+  "dirty matcha large": "MILK TEA CUPS 22 oz",
+  "taro lava large": "MILK TEA CUPS 22 oz",
+  "signature choco large": "MILK TEA CUPS 22 oz",
+  "cucumber lemonade": "MILK TEA CUPS 22 oz",
+  "dirty matcha medium": "MILK TEA CUPS 16 oz",
+  "lemon kalamansi": "MILK TEA CUPS 22 oz",
+  "fresh honey lemonade": "MILK TEA CUPS 22 oz",
+  "coffee roti bun": "Coffee roti roll"
+};
 const excludedItems = new Set(["add on coffee jelly", "box of pianono"]);
 
 const norm = s => (s || '').toString().toLowerCase().trim().replace(/\s+/g, ' ');
@@ -289,6 +467,8 @@ function rebuildTable() {
 }
 
 function mapName(rawName) {
+  const n = norm(rawName);
+  if (directMap[n]) return directMap[n];
   const nm = norm(rawName);
   if (excludedItems.has(nm)) return null;
   if (directMap[nm]) return directMap[nm];
