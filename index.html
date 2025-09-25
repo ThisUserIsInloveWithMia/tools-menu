@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Main Menu</title>
+  <title>King's Tools</title>
+
+  <!-- Android / PWA -->
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
 
-  <script>
-    // Daily version (YYYYMMDD)
-    const today = new Date();
-    const v = today.getFullYear().toString()
-              + String(today.getMonth() + 1).padStart(2, '0')
-              + String(today.getDate()).padStart(2, '0');
+  <!-- iOS Support -->
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="KBS Tools">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    // Manifest with version
-    document.write('<link rel="manifest" href="manifest.json?v=' + v + '">');
-  </script>
-
+  <!-- Styling -->
   <style>
     body {
       font-family: 'Poppins', Arial, sans-serif;
@@ -57,6 +56,7 @@
       border: 2px solid rgba(255,255,255,0.3);
       backdrop-filter: blur(6px);
       transition: all 0.3s ease;
+      text-align: center;
     }
     .menu a:hover {
       background: #fff;
@@ -64,26 +64,34 @@
       transform: translateY(-3px);
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     }
+    .ver {
+      font-size: 0.8em;
+      font-weight: normal;
+      opacity: 0.8;
+      display: block;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
   <h1>Welcome — Choose a Tool!</h1>
   <h2>This is focused for KBS only</h2>
-  <div class="menu" id="menu"></div>
+  <div class="menu">
+    <a href="DSIRProcessor_v6_3_UI_layout.html">
+      📊 DSIR Processor<br><span class="ver">v6.3</span>
+    </a>
+    <a href="InvoiceGenerator.html">
+      🧾 Receipt Generator<br><span class="ver">v4</span>
+    </a>
+    <a href="AutoPMIX.html">
+      ⚙️ Product Mix Generator<br><span class="ver">v16</span>
+    </a>
+  </div>
 
   <script>
-    // Insert all 3 menu links with daily version
-    const menu = document.getElementById("menu");
-    menu.innerHTML = `
-      <a href="DSIRProcessor_v6_3_UI_layout.html?v=${v}">📊 DSIR Processor</a>
-      <a href="InvoiceGenerator.html?v=${v}">🧾 Invoice Generator</a>
-      <a href="AutoPMIX.html?v=${v}">⚙️ Product Mix Generator</a>
-    `;
-
-    // Register service worker with daily version
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js?v=" + v)
-        .then(() => console.log("✅ Service Worker Registered with version " + v))
+      navigator.serviceWorker.register("sw.js")
+        .then(() => console.log("✅ Service Worker Registered"))
         .catch(err => console.error("SW registration failed:", err));
     }
   </script>
