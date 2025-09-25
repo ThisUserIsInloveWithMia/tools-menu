@@ -438,12 +438,13 @@ function generate(){
     card.appendChild(header);
     let tbodyHTML="";
     r.items.forEach(it=>{
-      const row=document.createElement("div");
-      row.className="row-line";
-      row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${it[3].toFixed(2)}`;
-      card.appendChild(row);
-      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(it[3])}</td></tr>`;
-    });
+  const row=document.createElement("div");
+  row.className="row-line";
+  let lineTotal = it[0] * it[2]; // recalc every time
+  row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${lineTotal.toFixed(2)}`;
+  card.appendChild(row);
+  tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(lineTotal)}</td></tr>`;
+});
     const vat=vatFromGross(r.gross), net=netFromGross(r.gross);
     card.innerHTML+=`<div class="row-line">Less: VAT (12%) = ${money(vat)}</div>`;
     card.innerHTML+=`<div class="row-line">Net of VAT = ${money(net)}</div>`;
