@@ -329,6 +329,7 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 
 
+
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
@@ -378,14 +379,14 @@ function generate(){
   while(receipts.length < approx-1 && running < target-200){
     let rem = target-running;
     let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
-    if(cand.items.length){
+    if(cand.items && cand.items.length>0){
       cand.gross = cand.items.reduce((s,it)=>s+(it[0]*it[2]),0);
       if(running+cand.gross <= target){
         cand.num=current++;
         receipts.push(cand);
         running+=cand.gross;
       }
-    } else break;
+    }
   }
 
   let remainder = +(target-running).toFixed(2);
@@ -407,6 +408,7 @@ function generate(){
 
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
+    if(!r.items || r.items.length===0) return; // skip empty receipts
     const card=document.createElement("div");
     card.className="receipt-card"+(r.rounding?" rounding":"");
     const header=document.createElement("div");
