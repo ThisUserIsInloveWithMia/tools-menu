@@ -26,53 +26,30 @@
       background: linear-gradient(135deg, #4f46e5, #ff7e00);
       color: #fff;
     }
-    h1 {
-      margin-bottom: 10px;
-      font-size: 2em;
-      text-align: center;
-      text-shadow: 0 3px 8px rgba(0,0,0,0.2);
-    }
-    h2 {
-      margin-bottom: 40px;
-      font-size: 1.1em;
-      font-weight: 400;
-      text-align: center;
-      color: #eee;
-    }
-    .menu {
-      display: flex; gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .menu a {
-      display: inline-block;
-      padding: 16px 30px;
-      border-radius: 12px;
-      font-size: 1.1em;
-      font-weight: 600;
-      text-decoration: none;
-      color: #fff;
-      background: rgba(255,255,255,0.1);
+    h1 { margin-bottom: 10px; font-size: 2em; text-align: center; text-shadow: 0 3px 8px rgba(0,0,0,0.2); }
+    h2 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
+    .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .menu a, .menu button {
+      display: inline-block; padding: 16px 30px; border-radius: 12px;
+      font-size: 1.1em; font-weight: 600; text-decoration: none;
+      color: #fff; background: rgba(255,255,255,0.1);
       border: 2px solid rgba(255,255,255,0.3);
-      backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
-      text-align: center;
+      backdrop-filter: blur(6px); transition: all 0.3s ease; text-align: center;
+      cursor: pointer;
     }
-    .menu a:hover {
-      background: #fff;
-      color: #333;
-      transform: translateY(-3px);
+    .menu a:hover, .menu button:hover {
+      background: #fff; color: #333; transform: translateY(-3px);
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     }
-    .ver {
-      font-size: 0.75em;
-      font-weight: 500;
-      background: rgba(255,255,255,0.2);
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-top: 6px;
-      display: inline-block;
-    }
+    .ver { font-size: 0.75em; font-weight: 500; background: rgba(255,255,255,0.2);
+      padding: 2px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; }
+    /* Modal */
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:1200;}
+    .modal-content{background:#fff;color:#333;padding:20px;border-radius:12px;max-width:400px;width:90%;text-align:left;}
+    .modal-content h3{margin-top:0;color:#ff7e00;}
+    .close-btn{margin-top:12px;padding:8px 14px;border:none;border-radius:20px;background:#4f46e5;color:#fff;cursor:pointer;}
+    .close-btn:hover{background:#ff7e00;}
   </style>
 </head>
 <body>
@@ -80,34 +57,42 @@
   <h2>This is focused for KBS only</h2>
 
   <div class="menu">
-    <a href="DSIRProcessor_v6_3_UI_layout.html">
-      📊 DSIR Processor<br><span class="ver">v6.3</span>
-    </a>
-    <a href="InvoiceGenerator.html">
-      🧾 Receipt Generator<br><span class="ver">v4</span>
-    </a>
-    <a href="AutoPMIX.html">
-      ⚙️ Product Mix Generator<br><span class="ver">v16</span>
-    </a>
+    <a href="DSIRProcessor_v6_3_UI_layout.html">📊 DSIR Processor<br><span class="ver">v6.3</span></a>
+    <a href="InvoiceGenerator_v16_1.html">🧾 Receipt Generator<br><span class="ver">v5</span></a>
+    <a href="AutoPMIX.html">⚙️ Product Mix Generator<br><span class="ver">v16</span></a>
+    <button onclick="openWhatsNew()">🆕 What's New?</button>
+  </div>
+
+  <!-- What's New Modal -->
+  <div id="whatsNewModal" class="modal">
+    <div class="modal-content">
+      <h3>What's New? v5</h3>
+      <ul>
+        <li>Fix common bugs:</li>
+        <ul>
+          <li>• No item but receipts are generated</li>
+          <li>• Wrong computation of product</li>
+          <li>• Wrong rounding</li>
+        </ul>
+      </ul>
+      <button class="close-btn" onclick="closeWhatsNew()">Cool!</button>
+    </div>
   </div>
 
   <script>
-    // Daily cache-busting string (YYYYMMDD)
-    const today = new Date();
-    const cacheBust = today.getFullYear().toString()
-                     + String(today.getMonth() + 1).padStart(2, '0')
-                     + String(today.getDate()).padStart(2, '0');
+    function openWhatsNew(){ document.getElementById("whatsNewModal").style.display="flex"; }
+    function closeWhatsNew(){ document.getElementById("whatsNewModal").style.display="none"; }
 
-    // Append ?v=YYYYMMDD to all menu links
-    document.querySelectorAll(".menu a").forEach(link => {
-      link.href = link.getAttribute("href") + "?v=" + cacheBust;
+    // Daily cache-busting string
+    const today=new Date();
+    const cacheBust=today.getFullYear().toString()+String(today.getMonth()+1).padStart(2,"0")+String(today.getDate()).padStart(2,"0");
+    document.querySelectorAll(".menu a").forEach(link=>{
+      link.href=link.getAttribute("href")+"?v="+cacheBust;
     });
-
-    // Register service worker with cache-busting too
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js?v=" + cacheBust)
-        .then(() => console.log("✅ Service Worker Registered with version " + cacheBust))
-        .catch(err => console.error("SW registration failed:", err));
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("sw.js?v="+cacheBust)
+        .then(()=>console.log("✅ Service Worker Registered with version "+cacheBust))
+        .catch(err=>console.error("SW registration failed:",err));
     }
   </script>
 </body>
