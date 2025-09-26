@@ -71,16 +71,11 @@
     background:var(--card); border:1px solid var(--border);
     box-shadow:0 2px 5px rgba(0,0,0,0.15);
   }
-  .receipt-card {
-  border-radius:10px;
-  padding:12px;
-  margin:10px 0;   /* changed: top & bottom margin only */
-  background:var(--card);
-  border:1px solid var(--border);
-  box-shadow:0 2px 5px rgba(0,0,0,0.15);
-  display:block;   /* force block */
-  width:100%;      /* full width */
-}
+  .receipt-card.alt{ background:var(--card-alt); }
+  .receipt-header{ font-weight:600; margin-bottom:8px; }
+  .rounding{ border:2px solid var(--accent); }
+  .rounding .receipt-header{ color:var(--accent); }
+
   .summary-card{
     background:var(--summary-bg); color:var(--summary-text);
     font-weight:600; border-radius:10px;
@@ -133,8 +128,7 @@
 .receipt-table th { background:rgba(0,0,0,0.05); font-weight:bold; }
 body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 .gross-row td { font-weight:bold; color:var(--accent-2); }
-@media (min-width:768px) and (orientation:landscape), (min-width:992px){
-  .row-line { display:none; }
+/* Disabled landscape media query so receipts always show row-line */
   .receipt-table { display:table; }
 }
 
@@ -335,6 +329,7 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 
 
+
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
@@ -394,13 +389,37 @@ function generate(){
     }
   }
 
+  // calculate remainder
   let remainder = +(target-running).toFixed(2);
-  if(remainder < 90 || remainder > 110){ remainder = 100; }
+
+  // redistribute remainder if too large
+  let safety=0;
+  while(remainder > 250 && safety < 2000){
+    for(let i=0;i<receipts.length && remainder>250;i++){
+      if(receipts[i].cake) continue;
+      let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
+      let qty = Math.floor(Math.random()*3)+1;
+      let addCost = p*qty;
+      if(running+addCost <= target){
+        addItem(receipts[i].items, qty, n, p);
+        receipts[i].gross = receipts[i].items.reduce((s,it)=>s+(it[0]*it[2]),0);
+        running+=addCost;
+        remainder=+(target-running).toFixed(2);
+      }
+    }
+    safety++;
+  }
+
+  // final remainder clamp ~100
+  if(remainder < 80 || remainder > 120){
+    remainder = 100;
+  }
 
   let finalItems=[[1,"Rounding Breads",remainder]];
   receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
   running=+(running+remainder).toFixed(2);
 
+  // Correct rounding if still off
   let diff=+(running-target).toFixed(2);
   if(diff!==0){
     let roundingReceipt = receipts[receipts.length-1];
@@ -413,7 +432,7 @@ function generate(){
 
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
-    if(!r.items || r.items.length===0) return; // skip empty receipts
+    if(!r.items || r.items.length===0) return;
     const card=document.createElement("div");
     card.className="receipt-card"+(r.rounding?" rounding":"");
     const header=document.createElement("div");
