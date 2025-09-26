@@ -29,20 +29,44 @@
     h1 { margin-bottom: 10px; font-size: 2em; text-align: center; text-shadow: 0 3px 8px rgba(0,0,0,0.2); }
     h2 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
     .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-    .menu a, .menu button {
+    .menu a {
       display: inline-block; padding: 16px 30px; border-radius: 12px;
       font-size: 1.1em; font-weight: 600; text-decoration: none;
       color: #fff; background: rgba(255,255,255,0.1);
       border: 2px solid rgba(255,255,255,0.3);
       backdrop-filter: blur(6px); transition: all 0.3s ease; text-align: center;
-      cursor: pointer;
     }
-    .menu a:hover, .menu button:hover {
+    .menu a:hover {
       background: #fff; color: #333; transform: translateY(-3px);
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     }
-    .ver { font-size: 0.75em; font-weight: 500; background: rgba(255,255,255,0.2);
-      padding: 2px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; }
+    .ver {
+      font-size: 0.75em;
+      font-weight: 500;
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+      display: inline-block;
+    }
+    /* Small What's New Button */
+    .whatsnew-btn {
+      margin-top: 6px;
+      font-size: 0.8em;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .whatsnew-btn:hover {
+      background: #fff;
+      color: #333;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
     /* Modal */
     .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
       background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:1200;}
@@ -57,10 +81,21 @@
   <h2>This is focused for KBS only</h2>
 
   <div class="menu">
-    <a href="DSIRProcessor_v6_3_UI_layout.html">📊 DSIR Processor<br><span class="ver">v6.3</span></a>
-    <a href="InvoiceGenerator.html">🧾 Receipt Generator<br><span class="ver">v5</span></a>
-    <a href="AutoPMIX.html">⚙️ Product Mix Generator<br><span class="ver">v16</span></a>
-    <button onclick="openWhatsNew()">🆕 What's New?</button>
+    <a href="DSIRProcessor_v6_3_UI_layout.html">
+      📊 DSIR Processor<br><span class="ver">v6.3</span>
+    </a>
+
+    <!-- Receipt Generator with What's New below -->
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <a href="InvoiceGenerator.html">
+        🧾 Receipt Generator<br><span class="ver">v6</span>
+      </a>
+      <button class="whatsnew-btn" onclick="openWhatsNew()">🆕 What's New?</button>
+    </div>
+
+    <a href="AutoPMIX.html">
+      ⚙️ Product Mix Generator<br><span class="ver">v16</span>
+    </a>
   </div>
 
   <!-- What's New Modal -->
