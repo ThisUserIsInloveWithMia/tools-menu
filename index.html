@@ -81,44 +81,62 @@
   <h2>This is focused for KBS only</h2>
 
   <div class="menu">
-    <a href="DSIRProcessor_v6_3_UI_layout.html">
-      📊 DSIR Processor<br><span class="ver">v6.3</span>
-    </a>
-
-    <!-- Receipt Generator with What's New below -->
+    <!-- DSIR Processor with What's New -->
     <div style="display:flex; flex-direction:column; align-items:center;">
-      <a href="InvoiceGenerator.html">
-        🧾 Receipt Generator<br><span class="ver">v6</span>
+      <a href="DSIRProcessor_v6_3_UI_layout.html">
+        📊 DSIR Processor<br><span class="ver">v6.3</span>
       </a>
-      <button class="whatsnew-btn" onclick="openWhatsNew()">🆕 What's New?</button>
+      <button class="whatsnew-btn" onclick="openDSIRWhatsNew()">🆕 What's New?</button>
     </div>
 
+    <!-- Receipt Generator with What's New -->
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <a href="InvoiceGenerator_v16_1.html">
+        🧾 Receipt Generator<br><span class="ver">v5</span>
+      </a>
+      <button class="whatsnew-btn" onclick="openReceiptWhatsNew()">🆕 What's New?</button>
+    </div>
+
+    <!-- Product Mix Generator -->
     <a href="AutoPMIX.html">
       ⚙️ Product Mix Generator<br><span class="ver">v16</span>
     </a>
   </div>
 
-  <!-- What's New Modal -->
-  <div id="whatsNewModal" class="modal">
+  <!-- DSIR What's New Modal -->
+  <div id="dsirWhatsNewModal" class="modal">
     <div class="modal-content">
-      <h3>What's New? v5</h3>
+      <h3>What's New? DSIR v6.3</h3>
+      <ul>
+        <li>NEW! Added a dropdown button for multiple days Sales report</li>
+      </ul>
+      <button class="close-btn" onclick="closeDSIRWhatsNew()">Cool!</button>
+    </div>
+  </div>
+
+  <!-- Receipt Generator What's New Modal -->
+  <div id="receiptWhatsNewModal" class="modal">
+    <div class="modal-content">
+      <h3>What's New? Receipt Generator v5</h3>
       <ul>
         <li>Fix common bugs:</li>
         <ul>
           <li>• No item but receipts are generated</li>
           <li>• Wrong computation of product</li>
           <li>• Wrong rounding</li>
-          <li>• Fix orientation issue cause by landscape mode</li>
-          <li>• *NEW* Added a dropdown button for multiple days Sales file to quickly sort each sales</li>
+          <li>• Fixed orientation issue</li>
         </ul>
       </ul>
-      <button class="close-btn" onclick="closeWhatsNew()">Cool!</button>
+      <button class="close-btn" onclick="closeReceiptWhatsNew()">Cool!</button>
     </div>
   </div>
 
   <script>
-    function openWhatsNew(){ document.getElementById("whatsNewModal").style.display="flex"; }
-    function closeWhatsNew(){ document.getElementById("whatsNewModal").style.display="none"; }
+    function openDSIRWhatsNew(){ document.getElementById("dsirWhatsNewModal").style.display="flex"; }
+    function closeDSIRWhatsNew(){ document.getElementById("dsirWhatsNewModal").style.display="none"; }
+
+    function openReceiptWhatsNew(){ document.getElementById("receiptWhatsNewModal").style.display="flex"; }
+    function closeReceiptWhatsNew(){ document.getElementById("receiptWhatsNewModal").style.display="none"; }
 
     // Daily cache-busting string
     const today=new Date();
