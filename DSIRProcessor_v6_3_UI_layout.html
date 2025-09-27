@@ -305,7 +305,7 @@ button:hover, .btn:hover {
 <div class="card">
 <div class="row">
 <input accept=".csv" id="csvFile" type="file"/>
-<button id="processBtn">Process</button>
+<button id="processBtn">Process</button><select id="dateFilter" style="margin-left:10px; min-width:180px;"><option disabled="True" selected="True" value="">— Select date —</option></select>
 <button disabled="" id="downloadBtn">Download Excel</button>
 <button disabled="" id="copyBtn">Copy Sales Column</button>
 </div>
@@ -847,5 +847,147 @@ window.NEW_EMBEDDED_DSIR = [{"type": "product", "product": "Asado roll", "sales"
   }
 
 })();</script>
+
+<script>
+(function(){
+  function addLog(msg){
+    if (window.addLog) { window.addLog(msg); }
+    else { console.log(msg); }
+  }
+
+  function normalizeToYMD(val) {
+    if (!val) return null;
+    // try Date()
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), da=String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${da}`;
+    }
+    // yyyy-mm-dd or yyyy/mm/dd
+    let m = String(val).match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (m) {
+      const y = m[1], mo=String(m[2]).padStart(2,'0'), da=String(m[3]).padStart(2,'0');
+      return `${y}-${mo}-${da}`;
+    }
+    // mm/dd/yyyy
+    m = String(val).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (m) {
+      let y = m[3]; if (y.length===2){ y = (+y<70?'20'+y:'19'+y); }
+      const mo=String(m[1]).padStart(2,'0'), da=String(m[2]).padStart(2,'0');
+      return `${y}-${mo}-${da}`;
+    }
+    // fallback: take first token
+    const first = String(val).split(/\s+/)[0];
+    const d2 = new Date(first);
+    if (!isNaN(d2.getTime())) {
+      const y=d2.getFullYear(), mo=String(d2.getMonth()+1).padStart(2,'0'), da=String(d2.getDate()).padStart(2,'0');
+      return `${y}-${mo}-${da}`;
+    }
+    return null;
+  }
+
+  function findDateField(row){
+    // try common variants
+    const keys = Object.keys(row);
+    const prefs = ['Date','date','DATE','Transaction Date','Sales Date','Sales_Date','Txn Date','Created Time'];
+    for (const k of prefs){ if (k in row) return k; }
+    // heuristic: first key containing 'date'
+    const hit = keys.find(k => /date/i.test(k));
+    return hit || keys[0];
+  }
+
+  function ensurePapa(cb){
+    if (window.Papa && window.Papa.parse) return cb();
+    const s = document.createElement('script');
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js";
+    s.onload = cb;
+    document.head.appendChild(s);
+  }
+
+  function buildDateDropdown(file, dateFilterEl){
+    ensurePapa(() => {
+      window.Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => {
+          const data = res.data || [];
+          if (!data.length) return;
+          const field = findDateField(data[0]);
+          const dates = [];
+          for (const r of data){
+            const ymd = normalizeToYMD(r[field]);
+            if (ymd) dates.push(ymd);
+          }
+          const unique = Array.from(new Set(dates));
+          // sort newest -> oldest
+          unique.sort((a,b)=> new Date(b) - new Date(a));
+          // populate with placeholder first
+          dateFilterEl.innerHTML = "";
+          const ph = document.createElement('option');
+          ph.value = ""; ph.disabled = true; ph.selected = true;
+          ph.textContent = "— Select date —";
+          dateFilterEl.appendChild(ph);
+          unique.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d; opt.textContent = d;
+            dateFilterEl.appendChild(opt);
+          });
+          addLog(`[Info] Detected dates: ${unique.join(', ')}`);
+        }
+      });
+    });
+  }
+
+  function filterAndProcess(file, chosenDate){
+    ensurePapa(() => {
+      window.Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (res) => {
+          const data = res.data || [];
+          if (!data.length) return alert('CSV appears empty');
+          const field = findDateField(data[0]);
+          const filtered = data.filter(r => normalizeToYMD(r[field]) === chosenDate);
+          if (!filtered.length){
+            alert('No rows for the selected date: '+chosenDate);
+            return;
+          }
+          addLog(`[Info] Processing for date: ${chosenDate} (rows: ${filtered.length})`);
+          if (typeof window.processCsvRows === 'function'){
+            window.processCsvRows(filtered);
+          } else {
+            // fallback: try a custom event others may listen to
+            const ev = new CustomEvent('csv:filtered', {detail:{rows:filtered, date:chosenDate}});
+            window.dispatchEvent(ev);
+          }
+        }
+      });
+    });
+  }
+
+  const csvInput = document.getElementById('csvFile');
+  const dateFilter = document.getElementById('dateFilter');
+  const processBtn = document.getElementById('processBtn');
+  if (!csvInput || !dateFilter || !processBtn) return;
+
+  // Build date list on CSV selection
+  csvInput.addEventListener('change', () => {
+    const f = csvInput.files && csvInput.files[0];
+    if (!f) return;
+    buildDateDropdown(f, dateFilter);
+  });
+
+  // Intercept Process click to enforce date filter (one date only)
+  processBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const file = csvInput.files && csvInput.files[0];
+    if (!file){ alert('Choose CSV first'); return; }
+    const chosen = dateFilter.value;
+    if (!chosen){ alert('Choose a date in the dropdown'); return; }
+    filterAndProcess(file, chosen);
+  }, true);
+})();
+</script>
 </body>
 </html>
