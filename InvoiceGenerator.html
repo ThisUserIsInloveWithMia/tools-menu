@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Receipt Generator — King's Bakeshop</title>
+  <title>Receipt Generator — King's Bakeshop (v14 Sidebar+Fix)</title>
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
@@ -128,7 +128,8 @@
 .receipt-table th { background:rgba(0,0,0,0.05); font-weight:bold; }
 body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 .gross-row td { font-weight:bold; color:var(--accent-2); }
-/* Disabled landscape media query so receipts always show row-line */
+@media (min-width:768px) and (orientation:landscape), (min-width:992px){
+  .row-line { display:none; }
   .receipt-table { display:table; }
 }
 
@@ -220,20 +221,46 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 <script>
 // ===== Full Default Product Lists =====
 const DEFAULT_BREADS = {
-  "Coffee Bavarian Bun":48,"Ube Ensaymada":47,"Pineapple Delight":32,"Cheese Roll":37,
-  "Choco Crinkles":52,"Cream Bread":75,"Malunggay Cheese Pandesal":69,"Ube Stick":22,
-  "Dulce de Ube":99,"Chiffon Cake":62,"Hopia Ube":168,"Coco Cluster (x6)":59,
-  "Raisin Minis":50,"Cheese Pie":27,"Premium Cheese Bread":150,"Fluffy Chiffon":45,
-  "Yema Krema":89,"Malunggay Tuna":45,"Cheese Bites":72,"Leche Flan Cake":195,
-  "Custard Cream Bun":38,"Pizza Dog":58,"Choco Vanilla":39,"Special Pandesal (x9)":58,
-  "Macaroons":95,"Ube Queso Pandesal":125,"Milky Baby Pandesal":68,"S’mores Fudge":198
+"Asado roll":55,"Asado square":188,"Baked chicken empanada":65,"Braided ham":47,
+"Brown sugar raisin":115,"Cheese bites":72,"Double Cheese Bread x4":69,"Cheese roll":37,
+"Coffee bavarian bun":48,"Coffee roti roll":35,"Cream Bread":75,"Creamy enzaimada":37,
+"Custard cream bun":38,"Enzaimada bites":87,"Enzaimada rolls":148,"Flossy meat roll":55,
+"Four Seasons":38,"Garlic bread butter toast":68,"HAM & QUESO":47,"Ham and Cheese Roll":59,
+"Hongkong milk bread":55,"Hotdog with cheese":47,"Malunggay cheese pandesal":69,"Malunggay tuna":45,
+"Milky baby pandesal":68,"Milky ube roll":70,"Premium Cheese Bread":150,"Mongo loaf":65,
+"Mongo roll":19,"Coco cluster x6":59,"Pandecoco":18,"Pineapple delight":32,"SET1 BM5 (m.w.f)":99,
+"SET2 CE5":99,"SET 3 CE2,BMP3(m.w.f)":99,"SET 4 FS1,CRR2,MR2":99,"SET5 BS2,MR1,US2":99,
+"Hopia Mongo":168,"Hopia Ube":168,"Mochi Bread x6":128,"Special mongo bun":62,"Special pandesal x9":58,
+"Ube enzaimada single":47,"Ube macapuno loaf":75,"Ube munchies":72,"Ube queso pandesal":125,
+"Ube stick":22,"Wheat bread":72,"Cheese stick bread":45,"Pizzadog":58,"Volcanic Cheese Melt":168,
+"Pizza round":52,"BABY ENZAIMADA":47,"Spicy Chicken Floss":59,"RAISIN & WALNUT SOUR DOUGH":69,
+"Malunggay Pandesal x9":62,"DULCE de UBE":99,"CHEESY FLOSSY BAR":99,"UBE MOCHI BREAD":39,
+"MONGO MOCHI BREAD":39,"DOUBLE MUNCHIES":50,"BAVARIAN MUNCHIES":50,"PINEAPPLE MUNCHIES":50,
+"RAISIN MINIS":50,"CINNAMON ROLLS":50,"Malunggay Cheese Mini":50,"Paborito Breads x10":150,
+"Craving Breads x 6":150,"Banana loaf (New Improved)":180,"Banana slice":43,"CHEESY mamon /pc":48,
+"Cheese pie":27,"Chiffon cake":62,"Choco crinkles":52,"Choco vanilla":39,"Flossy chiffon x4":108,
+"Fluffy chiffon":45,"Fudge brownies x12":118,"Milky egg pie":48,"Mini cakes x12":198,"Mocha vanilla":39,
+"S'mores fudge x8":198,"Sossy flossy roll":108,"Yema Krema":89,"Egg Pie Whole":320,
+"Fudge brownies Single":29,"Macaroons":95,"Fluffy Chiffon Large":138,"LECHE FLAN CAKE":195,
+"Mini Jelly Roll":105,"PREMIUM TAISAN BAR":135
 };
 const DEFAULT_CAKES = {
-  "Ivory Bloom Affordable":399,"Dolce de Leche Affordable":450,"Ube Leche Flan Affordable":495,
-  "Ube Halaya Affordable":450,"Choco Fantasy Affordable":450,"Mochalicious Affordable":450,
-  "Choco Caramel Affordable":495,"Choco Dream Affordable":495,"Mango Supreme Affordable":495,
-  "Mocha Drip Affordable":495,"Yema Cake Affordable":495,"The Duet (Choco Mocha)":495,
-  "Kitkat Mousse Affordable":550,"Nutella Affordable":550
+"Choco Fantasy 6\"":320,"Choco Fantasy 8\"":495,"Choco Fantasy Rectangle":695,
+"CHOCOLATE CARAMEL 6\"":360,"CHOCOLATE CARAMEL 8\"":560,"CHOCOLATE CARAMEL 8X12\"":860,
+"DOLCE DE LECHE 6\"":360,"DOLCE DE LECHE 8\"":560,"DOLCE DE LECHE Rectangle":695,
+"Ivory Bloom 6\"":320,"Ivory Bloom 8\"":495,"Ivory Bloom 8X12\"":795,
+"Kitkat Mousse Cake 6\"":490,"Kitkat Mousse Cake 8\"":690,
+"MANGO SUPREME 6\"":360,"MANGO SUPREME 8\"":560,"MOCHA DRIP 6\"":360,"MOCHA DRIP 8\"":560,
+"MOCHALICIOUS 6\"":320,"MOCHALICIOUS 8\"":495,"MOCHALICIOUS Rectangle":695,
+"NUTELLA CAKE 6\"":490,"NUTELLA CAKE 8\"":690,"Oreo Dream 6\"":485,"Oreo Dream 8\"":690,
+"SALTED CARAMEL 6\"":360,"SALTED CARAMEL 8\"":560,"Ube Yum 6\"":360,"Ube Yum 8\"":560,
+"UBE LECHE FLAN 6\"":360,"UBE LECHE FLAN 8\"":560,"Ube Yum 8x12":860,
+"Yema Streussel 6\"":360,"Yema Streussel 8\"":560,
+"Ivory Bloom Affordable":399,"DOLCE DE LECHE Affordable":450,"UBE LECHE FLAN Affordable":495,
+"Ube Halaya Affordable":450,"Choco Fantasy Affordable":450,"Mochalicious Affordable":450,
+"Choco Caramel Affordable":495,"Choco Dream Affordable":495,"Mango Supreme Affordable":495,
+"Mocha Drip Affordable":495,"Yema Cake Affordable":495,"The Duet (Choco Mocha)":495,
+"Kitkat Mousse Affordable":550,"Nutella Affordable":550
 };
 
 let breads = {}, cakes = {};
@@ -327,9 +354,6 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 
 
-
-
-
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
@@ -347,12 +371,15 @@ function generate(){
     let found = arr.find(it => it[1]===name && it[2]===price);
     if(found){
       found[0]+=qty;
+      found[3]+=price*qty;
     } else {
-      if(arr.length < 5){
-        arr.push([qty,name,price]);
+      if(arr.length < 5){ // only allow new product if <5 lines
+        arr.push([qty,name,price,price*qty]);
       } else {
+        // force increase existing product instead
         let pick = arr[Math.floor(Math.random()*arr.length)];
         pick[0]+=qty;
+        pick[3]+=price*qty;
       }
     }
   }
@@ -360,101 +387,98 @@ function generate(){
   function randomBreadReceipt(rem){
     let k = Math.floor(Math.random()*6)+1;
     let pool=[...breadsArr]; pool.sort(()=>Math.random()-0.5);
-    let items=[];
+    let items=[], gross=0;
     for(let i=0;i<pool.length&&items.length<k;i++){
       let [n,p]=pool[i];
       let qty = Math.floor(Math.random()*3)+1;
-      if((qty*p) <= rem){
+      let cost = p*qty;
+      if(gross+cost <= rem){
         addItem(items, qty, n, p);
+        gross+=cost;
       }
     }
-    return {items};
+    return {items,gross};
   }
 
   function makeCakeReceipt(){
     let [n,p]=cakesArr[Math.floor(Math.random()*cakesArr.length)];
-    return {items:[[1,n,p]],cake:true};
+    return {items:[[1,n,p,p]],gross:p,cake:true};
   }
 
-  while(receipts.length < approx-1 && running < target-200){
+  while(running < target-200 && receipts.length < approx-1){
     let rem = target-running;
     let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
-    if(cand.items && cand.items.length>0){
-      cand.gross = cand.items.reduce((s,it)=>s+(it[0]*it[2]),0);
-      if(running+cand.gross <= target){
-        cand.num=current++;
-        receipts.push(cand);
-        running+=cand.gross;
-      }
-    }
+    if(cand.items.length && running+cand.gross <= target){
+      receipts.push({...cand,num:current++});
+      running+=cand.gross;
+    } else break;
   }
 
-  // calculate remainder
   let remainder = +(target-running).toFixed(2);
 
-  // redistribute remainder if too large
-  let safety=0;
-  while(remainder > 250 && safety < 2000){
-    for(let i=0;i<receipts.length && remainder>250;i++){
-      if(receipts[i].cake) continue;
-      let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
-      let qty = Math.floor(Math.random()*3)+1;
-      let addCost = p*qty;
-      if(running+addCost <= target){
-        addItem(receipts[i].items, qty, n, p);
-        receipts[i].gross = receipts[i].items.reduce((s,it)=>s+(it[0]*it[2]),0);
-        running+=addCost;
-        remainder=+(target-running).toFixed(2);
+  if(remainder > 110){
+    let safety=0;
+    while(remainder > 110 && safety<2000){
+      for(let i=0;i<receipts.length && remainder>110;i++){
+        if(receipts[i].cake) continue;
+        let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
+        let qty = Math.floor(Math.random()*5)+1;
+        let addCost = p*qty;
+        if(running+addCost <= target){
+          addItem(receipts[i].items, qty, n, p);
+          receipts[i].gross += addCost;
+          running += addCost;
+          remainder -= addCost;
+        }
       }
+      safety++;
     }
-    safety++;
   }
 
-  // final remainder clamp ~100
-  if(remainder < 80 || remainder > 120){
+  if(remainder < 90 || remainder > 110){
     remainder = 100;
   }
 
-  let finalItems=[[1,"Rounding Breads",remainder]];
+  let finalItems=[[1,"Rounding Breads",remainder,remainder]];
   receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
   running=+(running+remainder).toFixed(2);
 
-  // Correct rounding if still off
+  // Correct rounding if difference exists
   let diff=+(running-target).toFixed(2);
   if(diff!==0){
     let roundingReceipt = receipts[receipts.length-1];
-    let newGross = +(roundingReceipt.items[0][2]-diff).toFixed(2);
+    let newGross = +(roundingReceipt.gross - diff).toFixed(2);
     if(newGross < 0) newGross = 0;
-    roundingReceipt.items=[[1,"Rounding Breads",newGross]];
-    roundingReceipt.gross=newGross;
-    running = +(running-diff).toFixed(2);
+    roundingReceipt.items = [[1,"Rounding Breads",newGross,newGross]];
+    roundingReceipt.gross = newGross;
+    running = +(running - diff).toFixed(2);
   }
 
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
-    if(!r.items || r.items.length===0) return;
     const card=document.createElement("div");
-    card.className="receipt-card"+(r.rounding?" rounding":"");
+    card.className="receipt-card"+(idx%2?" alt":"")+(r.rounding?" rounding":"");
     const header=document.createElement("div");
     header.className="receipt-header";
     header.textContent = r.rounding?`🔶 Receipt ${r.num} (Rounding)`: `Receipt ${r.num}${r.cake?" — Cake Only":""}`;
     card.appendChild(header);
     let tbodyHTML="";
-    let grossCheck=0;
     r.items.forEach(it=>{
       const row=document.createElement("div");
       row.className="row-line";
-      let lineTotal = it[0]*it[2];
-      grossCheck+=lineTotal;
-      row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${lineTotal.toFixed(2)}`;
+      row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${it[3].toFixed(2)}`;
       card.appendChild(row);
-      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(lineTotal)}</td></tr>`;
+      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(it[3])}</td></tr>`;
     });
-    r.gross = grossCheck;
     const vat=vatFromGross(r.gross), net=netFromGross(r.gross);
     card.innerHTML+=`<div class="row-line">Less: VAT (12%) = ${money(vat)}</div>`;
     card.innerHTML+=`<div class="row-line">Net of VAT = ${money(net)}</div>`;
     card.innerHTML+=`<div class="row-line"><b>Gross Total: ${money(r.gross)}</b></div>`;
+    tbodyHTML+=`<tr><td colspan="3">Less: VAT (12%)</td><td>${money(vat)}</td></tr>`;
+    tbodyHTML+=`<tr><td colspan="3">Net of VAT</td><td>${money(net)}</td></tr>`;
+    tbodyHTML+=`<tr class="gross-row"><td colspan="3">Gross Total</td><td>${money(r.gross)}</td></tr>`;
+    const tableHTML=`<table class="receipt-table"><thead><tr><th>Qty</th><th>Product</th><th>Price</th><th>Total</th></tr></thead><tbody>${tbodyHTML}</tbody></table>`;
+    card.innerHTML+=tableHTML;
     wrap.appendChild(card);
   });
   const diffFinal=+(running-target).toFixed(2);
@@ -462,6 +486,8 @@ function generate(){
   summary.className="summary-card";
   summary.innerHTML=`PROJECT SUMMARY<br>Start: ${start} – End: ${current}<br>Receipts: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(running)}<br>Difference: ${diffFinal>0?"+":""}${money(diffFinal)}`;
   wrap.appendChild(summary);
+  projectSummary=summary.innerText;
+  $("#reportBtn").disabled=false;
 }
 // ===== Copy / Print / Report =====
 function copyAll(){
@@ -499,8 +525,6 @@ document.getElementById("searchBox").addEventListener("input", e => renderPriceA
       </ul>
       <li>• Added a main menu</li>
       <li>• Dark / Light mode added</li>
-      <li>• Fixed orientation issue caused by Landscape mode</li>
-      <li>• Few bug fixes</li>
     </ul>
     <button onclick="closeWhatsNew()" class="btn">Cool!</button>
   </div>
