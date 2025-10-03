@@ -128,8 +128,7 @@
 .receipt-table th { background:rgba(0,0,0,0.05); font-weight:bold; }
 body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 .gross-row td { font-weight:bold; color:var(--accent-2); }
-@media (min-width:768px) and (orientation:landscape), (min-width:992px){
-  .row-line { display:none; }
+/* Orientation media query removed to force vertical receipts */
   .receipt-table { display:table; }
 }
 
@@ -138,7 +137,16 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
     .container{ max-width:100%; padding:0; }
     .receipt-card,.summary-card{ box-shadow:none; border:1px solid #000; page-break-inside:avoid; }
   }
-  </style>
+  
+.receipt-card {
+  display:block !important;
+  width:100% !important;
+  margin:10px 0 !important;
+}
+.row-line { display:block !important; }
+.receipt-table { display:none !important; }
+
+</style>
 </head>
 <body>
   <header>
