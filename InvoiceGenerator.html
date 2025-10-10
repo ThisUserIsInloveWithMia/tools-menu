@@ -66,11 +66,13 @@
   button:disabled{ background:var(--btn-disabled); cursor:not-allowed; }
   .btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
 
-  .receipt-card{
-    border-radius:10px; padding:12px; margin-bottom:12px;
-    background:var(--card); border:1px solid var(--border);
-    box-shadow:0 2px 5px rgba(0,0,0,0.15);
-  }
+  .receipt-card {
+  display:block !important;
+  width:100% !important;
+  margin:10px 0 !important;
+}
+.row-line { display:block !important; }
+.receipt-table { display:none !important; }
   .receipt-card.alt{ background:var(--card-alt); }
   .receipt-header{ font-weight:600; margin-bottom:8px; }
   .rounding{ border:2px solid var(--accent); }
