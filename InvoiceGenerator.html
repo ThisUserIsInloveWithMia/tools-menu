@@ -128,7 +128,8 @@
 .receipt-table th { background:rgba(0,0,0,0.05); font-weight:bold; }
 body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 .gross-row td { font-weight:bold; color:var(--accent-2); }
-/* Orientation media query removed to force vertical receipts */
+@media (min-width:768px) and (orientation:landscape), (min-width:992px){
+  .row-line { display:none; }
   .receipt-table { display:table; }
 }
 
@@ -137,16 +138,7 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
     .container{ max-width:100%; padding:0; }
     .receipt-card,.summary-card{ box-shadow:none; border:1px solid #000; page-break-inside:avoid; }
   }
-  
-.receipt-card {
-  display:block !important;
-  width:100% !important;
-  margin:10px 0 !important;
-}
-.row-line { display:block !important; }
-.receipt-table { display:none !important; }
-
-</style>
+  </style>
 </head>
 <body>
   <header>
@@ -356,23 +348,28 @@ function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 
 
+
 function generate(){
   loadPrices();
   const start  = +$("#startNumber").value;
-  const target = +$("#grossTarget").value;
-  const approx = +$("#approxCount").value;
-  if(!start || !target || !approx){ alert("Fill in all inputs"); return; }
+  const target = +(parseFloat($("#grossTarget").value).toFixed(2));
+  const count  = +$("#approxCount").value;
+  if(!start || !target || !count){ alert("Fill in all inputs"); return; }
   if(target < 50){ alert("Target gross too low."); return; }
 
   const breadsArr = Object.entries(breads);
   const cakesArr  = Object.entries(cakes);
 
-  let receipts=[], running=0, current=start;
+  // Cake rule: disable cakes entirely when requested receipts <= 20
+  const cakesEnabled = count > 20;
 
-  const bigTicket = [
+  const bigTicket = new Set([
     "Egg Pie Whole","Banana loaf (New Improved)","Premium Cheese Bread",
     "Hopia Mongo","Hopia Ube","Paborito Breads x10","Craving Breads x 6"
-  ];
+  ]);
+
+  const LOW_PRICES = Array.from(new Set(breadsArr.map(x=>x[1]))).sort((a,b)=>a-b);
+  const HIGH_PRICES = LOW_PRICES.slice().reverse();
 
   function addItem(arr, qty, name, price){
     let found = arr.find(it => it[1]===name && it[2]===price);
@@ -389,22 +386,18 @@ function generate(){
   }
 
   function getQty(name){
-    if(bigTicket.includes(name)){
-      return Math.floor(Math.random()*2)+1; // 1-2 only
-    }
-    return Math.floor(Math.random()*5)+1; // 1-5 normal
+    if(bigTicket.has(name)) return 1 + Math.floor(Math.random()*2); // 1-2
+    return 1 + Math.floor(Math.random()*5); // 1-5
   }
 
-  function randomBreadReceipt(rem){
-    let k = Math.floor(Math.random()*5)+1;
+  function makeBreadReceipt(){
+    let k = 1 + Math.floor(Math.random()*5);
     let pool=[...breadsArr]; pool.sort(()=>Math.random()-0.5);
     let items=[];
-    for(let i=0;i<pool.length&&items.length<k;i++){
+    for(let i=0;i<pool.length && items.length<k;i++){
       let [n,p]=pool[i];
       let qty = getQty(n);
-      if((qty*p) <= rem){
-        addItem(items, qty, n, p);
-      }
+      addItem(items, qty, n, p);
     }
     return {items};
   }
@@ -414,57 +407,187 @@ function generate(){
     return {items:[[1,n,p]],cake:true};
   }
 
-  while(receipts.length < approx-1 && running < target-200){
-    let rem = target-running;
-    let cand = Math.random()<0.2 ? makeCakeReceipt() : randomBreadReceipt(rem);
+  // --- 1) Generate exactly (count-1) normal receipts ---
+  let receipts=[], current=start;
+  for(let i=0;i<Math.max(0,count-1);i++){
+    let cand;
+    if(cakesEnabled && Math.random()<0.18){
+      cand = makeCakeReceipt();
+    } else {
+      cand = makeBreadReceipt();
+    }
     if(cand.items && cand.items.length>0){
       cand.gross = cand.items.reduce((s,it)=>s+(it[0]*it[2]),0);
-      if(running+cand.gross <= target){
-        cand.num=current++;
-        receipts.push(cand);
-        running+=cand.gross;
-      }
+      cand.num = current++;
+      receipts.push(cand);
     }
   }
 
-  let remainder = +(target-running).toFixed(2);
+  // If we somehow generated fewer (shouldn't happen), pad with tiny receipt lines before balancing
+  while(receipts.length < count-1){
+    receipts.push({num:current++, items:[[1,"Pandecoco",18]], gross:18});
+  }
+  // If too many, trim down to count-1
+  if(receipts.length > count-1){
+    receipts = receipts.slice(0, count-1);
+    current = receipts[receipts.length-1].num + 1;
+  }
 
-  // redistribute if too large
-  let safety=0;
-  while(remainder > 250 && safety < 2000){
-    for(let i=0;i<receipts.length && remainder>250;i++){
-      if(receipts[i].cake) continue;
-      let [n,p] = breadsArr[Math.floor(Math.random()*breadsArr.length)];
-      let qty = getQty(n);
-      let addCost = p*qty;
-      if(running+addCost <= target){
-        addItem(receipts[i].items, qty, n, p);
-        receipts[i].gross = receipts[i].items.reduce((s,it)=>s+(it[0]*it[2]),0);
-        running+=addCost;
-        remainder=+(target-running).toFixed(2);
+  function recomputeRunning(){
+    return +(receipts.reduce((S,r)=> S + r.items.reduce((s,it)=>s+(it[0]*it[2]),0), 0).toFixed(2));
+  }
+  let running = recomputeRunning();
+
+  // --- 2) Exact peso balancing across receipts (centavos reserved for rounding) ---
+  function tryAddPeso(p){
+    // add one item of price p to a random non-cake receipt
+    for(let tries=0; tries<60; tries++){
+      let r = receipts[Math.floor(Math.random()*receipts.length)];
+      if(!r || r.cake) continue;
+      let candidates = breadsArr.filter(bp => bp[1]===p);
+      if(candidates.length===0) return false;
+      let [name,price] = candidates[Math.floor(Math.random()*candidates.length)];
+      addItem(r.items, 1, name, price);
+      r.gross = r.items.reduce((s,it)=>s+(it[0]*it[2]),0);
+      return true;
+    }
+    return false;
+  }
+
+  function tryRemovePesoPreferHigh(p){
+    // remove one unit of an item priced p from any receipt (prefer high prices loop outside)
+    for(let r of receipts){
+      if(r.cake) continue;
+      for(let it of r.items){
+        if(it[2]===p && it[0]>0){
+          it[0]-=1;
+          if(it[0]===0){
+            r.items = r.items.filter(x=>x!==it);
+          }
+          r.gross = r.items.reduce((s,a)=>s+(a[0]*a[2]),0);
+          return true;
+        }
       }
     }
-    safety++;
+    return false;
   }
 
-  if(remainder < 80 || remainder > 120){
-    remainder = 100;
+  function balancePesos(){
+    // Work only with integer pesos; leave centavos for the final rounding receipt
+    let diff = +(target - running).toFixed(2);
+    let pesosNeeded = Math.trunc(diff); // integer part toward zero
+    // If diff negative (overshoot), pesosNeeded is negative
+
+    let safety=0;
+    while(pesosNeeded !== 0 && safety < 5000){
+      if(pesosNeeded > 0){
+        // Need to add
+        let p = LOW_PRICES.find(v => v <= pesosNeeded) || LOW_PRICES[0];
+        if(!tryAddPeso(p)){
+          // two-sum add fallback
+          let done=false;
+          for(let a of LOW_PRICES){
+            for(let b of LOW_PRICES){
+              if(a+b===pesosNeeded){
+                if(tryAddPeso(a) && tryAddPeso(b)){ done=true; break; }
+              }
+            }
+            if(done) break;
+          }
+          if(!done){
+            // random small add to make progress
+            let rp = LOW_PRICES[Math.floor(Math.random()*LOW_PRICES.length)];
+            tryAddPeso(rp);
+          }
+        }
+      } else {
+        // Need to remove (overshoot)
+        let need = -pesosNeeded;
+        // Prefer removing a higher price first to converge faster
+        let pHigh = HIGH_PRICES.find(v => v <= need) || HIGH_PRICES[HIGH_PRICES.length-1];
+        if(!tryRemovePesoPreferHigh(pHigh)){
+          // try two-sum removal
+          let done=false;
+          for(let a of HIGH_PRICES){
+            for(let b of HIGH_PRICES){
+              if(a+b===need){
+                if(tryRemovePesoPreferHigh(a) && tryRemovePesoPreferHigh(b)){ done=true; break; }
+              }
+            }
+            if(done) break;
+          }
+          if(!done){
+            // Swap strategy: add 'a' and remove 'b' where (b-a) = need
+            let found=false;
+            for(let b of HIGH_PRICES){
+              for(let a of LOW_PRICES){
+                if(b-a===need){
+                  if(tryAddPeso(a) && tryRemovePesoPreferHigh(b)){ found=true; break; }
+                }
+              }
+              if(found) break;
+            }
+            if(!found){
+              // last resort: remove any high price to move towards zero
+              for(let b of HIGH_PRICES){
+                if(tryRemovePesoPreferHigh(b)){ break; }
+              }
+            }
+          }
+        }
+      }
+      running = recomputeRunning();
+      diff = +(target - running).toFixed(2);
+      pesosNeeded = Math.trunc(diff);
+      safety++;
+    }
+    // Return remaining centavos (positive or negative). We'll correct via rounding receipt.
+    return +(target - running).toFixed(2);
   }
 
-  let finalItems=[[1,"Rounding Breads",remainder]];
-  receipts.push({num:current,items:finalItems,gross:remainder,rounding:true});
-  running=+(running+remainder).toFixed(2);
+  let remaining = balancePesos();
 
-  let diff=+(running-target).toFixed(2);
-  if(diff!==0){
-    let roundingReceipt = receipts[receipts.length-1];
-    let newGross = +(roundingReceipt.items[0][2]-diff).toFixed(2);
-    if(newGross < 0) newGross = 0;
-    roundingReceipt.items=[[1,"Rounding Breads",newGross]];
-    roundingReceipt.gross=newGross;
-    running = +(running-diff).toFixed(2);
+  // Centavos-only rounding value
+  let centavos = +((+remaining).toFixed(2));
+  // If centavos is negative (tiny overshoot), convert by removing 1 peso and adding positive centavos
+  if(centavos < 0){
+    // Remove 1 peso via high-price removal if possible
+    for(let b of HIGH_PRICES){
+      if(tryRemovePesoPreferHigh(b)){ break; }
+    }
+    running = recomputeRunning();
+    centavos = +(target - running).toFixed(2);
   }
 
+  // Safety clamp
+  if(centavos < 0) centavos = 0;
+  centavos = +centavos.toFixed(2);
+
+  // --- 3) Final receipt: rounding (centavos only) ---
+  let finalNum = current;
+  const roundingReceipt = {num:finalNum, items:[[1,"Rounding Breads", centavos]], gross:centavos, rounding:true};
+  receipts.push(roundingReceipt);
+
+  // Ensure exact count (pad before rounding if needed, though we took care earlier)
+  if(receipts.length > count){
+    // remove extra non-rounding receipts from before rounding
+    let over = receipts.length - count;
+    receipts.splice(count-1, over); // keep rounding as last
+  } else if(receipts.length < count){
+    // pad with tiny receipts of 18 before rounding, then re-adjust rounding
+    let need = count - receipts.length;
+    let addGross=0;
+    for(let i=0;i<need;i++){
+      receipts.splice(receipts.length-1,0,{num:finalNum++, items:[[1,"Pandecoco",18]], gross:18});
+      addGross+=18;
+    }
+    running = recomputeRunning();
+    centavos = +(target - running).toFixed(2);
+    if(centavos < 0) centavos = 0;
+    receipts[receipts.length-1] = {num:finalNum, items:[[1,"Rounding Breads", centavos]], gross:centavos, rounding:true};
+  }
+
+  // --- Render ---
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
     if(!r.items || r.items.length===0) return;
@@ -474,7 +597,6 @@ function generate(){
     header.className="receipt-header";
     header.textContent = r.rounding?`🔶 Receipt ${r.num} (Rounding)`: `Receipt ${r.num}${r.cake?" — Cake Only":""}`;
     card.appendChild(header);
-    let tbodyHTML="";
     let grossCheck=0;
     r.items.forEach(it=>{
       const row=document.createElement("div");
@@ -483,7 +605,6 @@ function generate(){
       grossCheck+=lineTotal;
       row.textContent=`${it[0]} × ${it[1]} – ₱${it[2]} = ₱${lineTotal.toFixed(2)}`;
       card.appendChild(row);
-      tbodyHTML+=`<tr><td>${it[0]}</td><td>${it[1]}</td><td>${money(it[2])}</td><td>${money(lineTotal)}</td></tr>`;
     });
     r.gross = grossCheck;
     const vat=vatFromGross(r.gross), net=netFromGross(r.gross);
@@ -492,11 +613,14 @@ function generate(){
     card.innerHTML+=`<div class="row-line"><b>Gross Total: ${money(r.gross)}</b></div>`;
     wrap.appendChild(card);
   });
-  const diffFinal=+(running-target).toFixed(2);
+
+  // --- Summary ---
+  const totalGross = receipts.reduce((S,r)=>S+r.gross,0);
   const summary=document.createElement("div");
   summary.className="summary-card";
-  summary.innerHTML=`PROJECT SUMMARY<br>Start: ${start} – End: ${current}<br>Receipts: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(running)}<br>Difference: ${diffFinal>0?"+":""}${money(diffFinal)}`;
-  wrap.appendChild(summary);
+  const diffFinal=+(totalGross - target).toFixed(2);
+  summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${diffFinal>0?"+":""}${money(diffFinal)}`;
+  $("#receipts").appendChild(summary);
 }
 // ===== Copy / Print / Report =====
 function copyAll(){
