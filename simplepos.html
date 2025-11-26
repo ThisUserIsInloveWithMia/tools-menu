@@ -3,30 +3,103 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Simple POS — Catalog Loaded</title>
+  <title>Simple POS — Final Layout and Features</title>
   <style>
-    :root{--accent:#07689f}
-    body{font-family:Inter,Segoe UI,Arial;margin:0;background:#f3f6f8;color:#222}
+    /* --- General Styles --- */
+    :root{--accent:#07689f; --remove-color: #d9534f; --commit-color: #28a745; --download-color: #f0ad4e;}
+    /* FIX: Background changed to lighter #fafafa */
+    body{font-family:Inter,Segoe UI,Arial;margin:0;background:#fafafa;color:#222} 
     .wrap{max-width:1100px;margin:24px auto;padding:20px}
     .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+    #transactionLogContainer { margin-top: 24px; }
     h1{margin:0 0 12px;font-size:20px}
+    h2{margin-top: 0; font-size: 18px;}
     .layout{display:grid;grid-template-columns:1fr 420px;gap:16px}
+    .top-controls{display:flex;justify-content:space-between;gap:16px;margin-bottom:16px;}
     .controls{display:flex;gap:8px;align-items:center}
     input,select,button{padding:8px;border-radius:8px;border:1px solid #e3e7ea;font-size:14px}
     select{min-width:260px}
+    
+    /* Default button style */
     button{background:var(--accent);color:#fff;border:none;cursor:pointer}
+    .remove-btn{background:var(--remove-color);padding:4px 8px;border-radius:6px;font-size:13px;color:#fff;}
+    #commitBtn { background: var(--commit-color); }
+    #downloadBtn { background: var(--download-color); } 
+
+    /* Tables */
     table{width:100%;border-collapse:collapse;margin-top:12px}
     th,td{padding:8px;border-bottom:1px solid #eef2f4;text-align:left}
     tfoot td{font-weight:700}
     .right{text-align:right}
     .small{font-size:13px;color:#666}
     .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .details-table{width: 400px; margin-top: 0; background: #f9f9f9; border-radius: 8px;}
+    .details-table td:first-child{font-weight: 500;}
+    .details-table td{padding: 6px 10px; border: none;}
+    
+    #logTable th, #logTable td {
+        padding: 10px;
+        font-size: 14px;
+        text-align: left;
+        border-bottom: 1px solid #e3e7ea;
+    }
+    #logTable th {
+        background: #f1f4f8;
+        font-weight: 600;
+        border-top: 1px solid #e3e7ea;
+    }
+    .txn-items-cell { 
+        cursor: pointer; 
+        color: var(--accent);
+        text-decoration: underline;
+    }
+    .log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    
+    /* --- CRITICAL FIX FOR QUICK LIST BUTTONS --- */
+    #quickList button {
+        background: #fff; /* Override default button background */
+        color: #222; 
+        border: 1px solid #ddd;
+        white-space: normal; /* Allows text to wrap */
+        height: auto;
+        min-height: 50px; 
+        line-height: 1.2;
+        text-align: left;
+        /* Ensures the two inner <div>s stack vertically */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        font-size: 13px; 
+        padding: 6px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Simple POS — Catalog Loaded</h1>
+      <h1>Simple POS — Cashier and Transaction Details</h1>
+      
+      <div class="top-controls">
+        <div style="flex:1; max-width: 400px;">
+          <div class="small">Cashier Name</div>
+          <input id="cashierName" placeholder="Enter Cashier Name..." style="width: 100%; margin-top: 6px;" />
+        </div>
+        
+        <table class="details-table" id="detailsTable">
+            <tbody>
+                <tr><td>Cashier</td><td id="displayCashier">N/A</td></tr>
+                <tr><td>Transaction ID</td><td id="displayTxnId">TID-0001</td></tr>
+                <tr><td>Date/Time</td><td id="displayDateTime"></td></tr>
+            </tbody>
+        </table>
+      </div>
+
       <div class="layout">
         <div>
           <div class="small">Search / Select product</div>
@@ -43,13 +116,14 @@
             </thead>
             <tbody></tbody>
             <tfoot>
-              <tr><td colspan="3" class="right">Subtotal</td><td class="right" id="subtotal">₱0.00</td><td></td></tr>
+              <tr><td colspan="3" class="right">Total Due</td><td class="right" id="subtotal"></td><td></td></tr>
             </tfoot>
           </table>
 
           <div class="actions">
             <button id="clear">Clear</button>
             <button id="print">Print Receipt</button>
+            <button id="commitBtn">Commit Sale</button>
           </div>
         </div>
 
@@ -59,10 +133,61 @@
         </div>
       </div>
     </div>
+    
+    <div class="card" id="transactionLogContainer">
+        <div class="log-header">
+            <h2>Transaction History Log</h2>
+            <button id="downloadBtn">Download Sales Report (Excel)</button>
+        </div>
+        <table id="logTable">
+            <thead>
+                <tr>
+                    <th>TXN ID</th>
+                    <th>Date</th>
+                    <th>Cashier</th>
+                    <th class="right">Total</th>
+                    <th>Items</th>
+                </tr>
+            </thead>
+            <tbody id="logTbody">
+                <tr><td colspan="5" style="text-align: center; color: #666;">No transactions committed yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
   </div>
 
   <script>
-    // Product catalog text (name<TAB>price per line). This is generated from your list.
+    // --- SETUP CONSTANTS & FORMATTERS ---
+
+    const formatter = new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2,
+    });
+    
+    const dateTimeFormatter = new Intl.DateTimeFormat('en-PH', { 
+        dateStyle: 'short', 
+        timeStyle: 'medium' 
+    });
+    
+    const timeFormatter = new Intl.DateTimeFormat('en-PH', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit'
+    });
+    
+    let transactionCount = 1;
+    function generateTxnId() {
+        return 'TID-' + String(transactionCount).padStart(4, '0');
+    }
+
+    function formatCurrency(amount) {
+        return formatter.format(amount);
+    }
+    
+    const committedTransactions = [];
+
+    // --- PRODUCT DATA (From your previous list) ---
     const productText = `Asado roll	55
 Asado square	188
 Baked chicken empanada	65
@@ -163,7 +288,7 @@ Fudge brownies Single	29
 Macaroons	98	
 Egg Pie Whole	375
 Box Of Pianono x20	290	
-CHOCO CARAMEL  Affordable	575
+CHOCO CARAMEL Affordable	575
 Choco Dream Affordable	595
 Choco Fantasy 8X11	795
 Choco Fantasy Affordable	550
@@ -341,7 +466,7 @@ TEA EGG CONTAINER	5
       return { name, price };
     }).filter(p=>p.name);
 
-    // DOM refs
+    // --- DOM REFS ---
     const select = document.getElementById('productSelect');
     const search = document.getElementById('search');
     const qtyInput = document.getElementById('qty');
@@ -349,28 +474,90 @@ TEA EGG CONTAINER	5
     const cartTbody = document.querySelector('#cartTable tbody');
     const subtotalEl = document.getElementById('subtotal');
     const quickList = document.getElementById('quickList');
+    const commitBtn = document.getElementById('commitBtn'); 
+    const downloadBtn = document.getElementById('downloadBtn'); 
 
+    const cashierInput = document.getElementById('cashierName');
+    const displayCashierEl = document.getElementById('displayCashier');
+    const displayTxnIdEl = document.getElementById('displayTxnId');
+    const displayDateTimeEl = document.getElementById('displayDateTime');
+    const logTbody = document.getElementById('logTbody');
+    
     let cart = [];
+
+    // --- FUNCTIONALITY ---
+
+    function updateDetails() {
+        const cashierName = cashierInput.value.trim() || 'N/A';
+        displayCashierEl.textContent = cashierName;
+        displayTxnIdEl.textContent = generateTxnId();
+        displayDateTimeEl.textContent = dateTimeFormatter.format(new Date());
+    }
 
     function populateSelect(list){
       select.innerHTML = '';
       list.forEach((p,i)=>{
         const opt = document.createElement('option');
-        opt.value = i; opt.textContent = `${p.name} — ₱${p.price}`;
+        opt.value = i; 
+        opt.textContent = `${p.name} — ₱${p.price.toFixed(2)}`; 
         select.appendChild(opt);
       });
     }
 
+    // *** FINALIZED QUICK BUTTON RENDER FIX (Using DIVs for stable stacking) ***
     function renderQuick(list){
       quickList.innerHTML = '';
       list.forEach((p,i)=>{
         const btn = document.createElement('button');
-        btn.style.padding='6px';btn.style.border='1px solid #eef';btn.style.background='#fff';btn.style.borderRadius='6px';
-        btn.textContent = `${p.name} — ₱${p.price}`;
+        
+        // Use innerHTML with two DIVs to ensure clean stacking and wrapping (due to flex column)
+        btn.innerHTML = `
+          <div style="font-size: 14px; text-align: left;">${p.name}</div>
+          <div style="font-weight: bold; font-size: 15px; color: var(--accent); margin-top: 2px;">₱${p.price.toFixed(2)}</div>
+        `;
+        
         btn.title = 'Click to add 1';
         btn.onclick = ()=>{ addToCart(p,1); };
         quickList.appendChild(btn);
       });
+    }
+
+
+    function renderTransactionLog() {
+        logTbody.innerHTML = ''; 
+
+        if (committedTransactions.length === 0) {
+            logTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No transactions committed yet.</td></tr>';
+            return;
+        }
+
+        [...committedTransactions].reverse().forEach((txn, index) => {
+            const tr = document.createElement('tr');
+            const originalIndex = committedTransactions.length - 1 - index; 
+            tr.innerHTML = `
+                <td>${txn.txnId}</td>
+                <td>${txn.dateTime.toLocaleDateString()} ${timeFormatter.format(txn.dateTime)}</td>
+                <td>${txn.cashier}</td>
+                <td class="right">${formatCurrency(txn.total)}</td>
+                <td class="txn-items-cell" data-index="${originalIndex}">View (${txn.items.length})</td>
+            `;
+            logTbody.appendChild(tr);
+        });
+        
+        logTbody.querySelectorAll('.txn-items-cell').forEach(cell => {
+            cell.onclick = function() {
+                showTransactionDetails(+this.dataset.index);
+            };
+        });
+    }
+
+    function showTransactionDetails(index) {
+        const txn = committedTransactions[index];
+        const itemDetails = txn.items.map(item => 
+            `${item.qty}x ${item.name} (${formatCurrency(item.price)} each)`
+        ).join('\n');
+
+        alert(`--- Transaction ${txn.txnId} Details ---\n\nCashier: ${txn.cashier}\nDate: ${txn.dateTime.toLocaleDateString()} ${timeFormatter.format(txn.dateTime)}\nTotal: ${formatCurrency(txn.total)}\n\nItems:\n${itemDetails}`);
     }
 
     function addToCart(product, qty){
@@ -384,22 +571,118 @@ TEA EGG CONTAINER	5
     function renderCart(){
       cartTbody.innerHTML='';
       let subtotal = 0;
+
       cart.forEach((item,idx)=>{
         const tr = document.createElement('tr');
         const total = item.price * item.qty;
         subtotal += total;
-        tr.innerHTML = `<td>${item.name}</td><td class="right">₱${item.price.toFixed(2)}</td><td class="right">${item.qty}</td><td class="right">₱${total.toFixed(2)}</td><td class="right"><button data-idx="${idx}">Remove</button></td>`;
+
+        tr.innerHTML = `<td>${item.name}</td><td class="right">${formatCurrency(item.price)}</td><td class="right">${item.qty}</td><td class="right">${formatCurrency(total)}</td><td class="right"><button class="remove-btn" data-idx="${idx}">Remove</button></td>`;
         cartTbody.appendChild(tr);
       });
-      subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
+
+      subtotalEl.textContent = formatCurrency(subtotal);
+
       cartTbody.querySelectorAll('button').forEach(btn=>btn.onclick=function(){ const i=+this.dataset.idx; cart.splice(i,1); renderCart(); });
     }
 
-    // initial populate
-    populateSelect(products);
-    renderQuick(products.slice(0,80)); // show first 80 as quick list
+    function commitTransaction() {
+        if (cart.length === 0) {
+            alert("The cart is empty. Nothing to commit.");
+            return;
+        }
 
-    // search
+        const subtotal = cart.reduce((s,i)=>s + i.price*i.qty,0);
+        
+        const transactionRecord = {
+            txnId: displayTxnIdEl.textContent,
+            cashier: cashierInput.value.trim() || 'N/A',
+            dateTime: new Date(),
+            items: JSON.parse(JSON.stringify(cart)), 
+            total: subtotal
+        };
+        committedTransactions.push(transactionRecord);
+
+        renderTransactionLog(); 
+        alert(`Transaction ${transactionRecord.txnId} committed successfully!\nTotal Sale: ${formatCurrency(subtotal)}`);
+        
+        cart = [];
+        renderCart();
+        transactionCount++; 
+        updateDetails(); 
+    }
+    
+    function getAggregatedSales() {
+        const aggregated = {}; 
+
+        committedTransactions.forEach(txn => {
+            txn.items.forEach(item => {
+                const name = item.name;
+                const qty = item.qty;
+                const price = item.price;
+                
+                if (aggregated[name]) {
+                    aggregated[name].qty += qty;
+                } else {
+                    aggregated[name] = { qty: qty, price: price };
+                }
+            });
+        });
+
+        return aggregated;
+    }
+
+    function downloadSalesData() {
+        if (committedTransactions.length === 0) {
+            alert("No committed transactions to download.");
+            return;
+        }
+
+        const aggregatedData = getAggregatedSales();
+        
+        let csv = "Product Name,Total Quantity Sold,Unit Price (PHP),Total Revenue (PHP)\n";
+        
+        for (const name in aggregatedData) {
+            const data = aggregatedData[name];
+            const revenue = data.qty * data.price;
+
+            const line = [
+                `"${name}"`, 
+                data.qty, 
+                data.price.toFixed(2),
+                revenue.toFixed(2)
+            ].join(",");
+
+            csv += line + "\n";
+        }
+        
+        const grandTotal = committedTransactions.reduce((sum, txn) => sum + txn.total, 0);
+        csv += `Grand Total,,,,${grandTotal.toFixed(2)}\n`;
+
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Sales_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert(`Sales report downloaded as Sales_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    }
+
+    // --- EVENT LISTENERS & INITIALIZATION ---
+
+    populateSelect(products);
+    renderQuick(products.slice(0,80)); 
+    renderCart(); 
+    updateDetails(); 
+    renderTransactionLog(); 
+
+    cashierInput.addEventListener('input', updateDetails);
+    
     search.addEventListener('input',()=>{
       const q = search.value.trim().toLowerCase();
       const filtered = products.filter(p=>p.name.toLowerCase().includes(q));
@@ -408,20 +691,45 @@ TEA EGG CONTAINER	5
     });
 
     addBtn.addEventListener('click',()=>{
-      const idx = +select.value;
-      const list = Array.from(select.options).map(o=>o.textContent);
-      // since select was populated with filtered products, find product by shown text
+      if (select.selectedIndex === -1) {
+        alert("Please select a product.");
+        return;
+      }
+      
       const optionText = select.options[select.selectedIndex].textContent;
-      const matchName = optionText.split(' — ₱')[0];
-      const prod = products.find(p=>p.name===matchName) || products[idx];
-      addToCart(prod, Number(qtyInput.value)||1);
+      const matchName = optionText.substring(0, optionText.lastIndexOf(' — ₱')); 
+      const prod = products.find(p=>p.name===matchName);
+      
+      const qty = Number(qtyInput.value);
+      if (qty <= 0 || isNaN(qty)) {
+          alert("Please enter a valid quantity greater than 0.");
+          qtyInput.value = 1;
+          return;
+      }
+
+      if(prod) {
+        addToCart(prod, qty);
+      } else {
+        alert("Error: Product not found.");
+      }
     });
 
-    // clear
-    document.getElementById('clear').addEventListener('click',()=>{ cart = []; renderCart(); });
+    document.getElementById('clear').addEventListener('click',()=>{ 
+        if(confirm('Are you sure you want to clear the entire cart? This will NOT save the transaction?')) {
+            cart = []; 
+            renderCart();
+        }
+    });
+
+    commitBtn.addEventListener('click', commitTransaction);
+    downloadBtn.addEventListener('click', downloadSalesData);
 
     // print receipt (simple)
     document.getElementById('print').addEventListener('click',()=>{
+      if (cart.length === 0) {
+        alert("Cannot print an empty receipt.");
+        return;
+      }
       const receipt = generateReceipt();
       const w = window.open('', '_blank');
       w.document.write(receipt);
@@ -430,9 +738,25 @@ TEA EGG CONTAINER	5
     });
 
     function generateReceipt(){
-      const lines = cart.map(i=>`<tr><td>${i.name}</td><td style="text-align:right">${i.qty} x ₱${i.price.toFixed(2)}</td><td style="text-align:right">₱${(i.qty*i.price).toFixed(2)}</td></tr>`).join('');
       const subtotal = cart.reduce((s,i)=>s + i.price*i.qty,0);
-      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Receipt</title><style>body{font-family:Arial;padding:16px}table{width:100%;border-collapse:collapse}td{padding:6px;border-bottom:1px dashed #ddd}</style></head><body><h2>Receipt</h2><table>${lines}</table><hr><h3 style="text-align:right">Total: ₱${subtotal.toFixed(2)}</h3></body></html>`;
+      const cashier = cashierInput.value.trim() || 'N/A';
+      const txnId = displayTxnIdEl.textContent;
+      const dateTime = displayDateTimeEl.textContent;
+
+      const lines = cart.map(i=>`<tr><td>${i.name}</td><td class="right">${i.qty} x ${formatCurrency(i.price)}</td><td class="right">${formatCurrency(i.qty*i.price)}</td></tr>`).join('');
+      
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Receipt</title><style>body{font-family:Arial;padding:16px;max-width:300px}table{width:100%;border-collapse:collapse}td{padding:6px 0;border-bottom:1px dashed #ddd} .right{text-align:right;} .total{font-weight:bold;}</style></head><body><h2>Receipt</h2>
+      <p style="font-size: small;">
+          Cashier: ${cashier}<br>
+          TXN ID: ${txnId}<br>
+          Date: ${dateTime}
+      </p>
+      <table>${lines}</table><hr>
+      <table>
+        <tr><td class="total">TOTAL DUE:</td><td class="right total">${formatCurrency(subtotal)}</td></tr>
+      </table>
+      <p style="text-align:center;font-size:small;margin-top:20px;">Thank you for your business!</p>
+      </body></html>`;
       return html;
     }
 
