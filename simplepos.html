@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple POS — Catalog Loaded</title>
+  <style>
+    :root{--accent:#07689f}
+    body{font-family:Inter,Segoe UI,Arial;margin:0;background:#f3f6f8;color:#222}
+    .wrap{max-width:1100px;margin:24px auto;padding:20px}
+    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+    h1{margin:0 0 12px;font-size:20px}
+    .layout{display:grid;grid-template-columns:1fr 420px;gap:16px}
+    .controls{display:flex;gap:8px;align-items:center}
+    input,select,button{padding:8px;border-radius:8px;border:1px solid #e3e7ea;font-size:14px}
+    select{min-width:260px}
+    button{background:var(--accent);color:#fff;border:none;cursor:pointer}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px solid #eef2f4;text-align:left}
+    tfoot td{font-weight:700}
+    .right{text-align:right}
+    .small{font-size:13px;color:#666}
+    .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Simple POS — Catalog Loaded</h1>
+      <div class="layout">
+        <div>
+          <div class="small">Search / Select product</div>
+          <div class="controls" style="margin-top:6px">
+            <input id="search" placeholder="Search product name..." style="flex:1" />
+            <select id="productSelect"></select>
+            <input id="qty" type="number" value="1" min="1" style="width:84px" />
+            <button id="addBtn">Add</button>
+          </div>
+
+          <table id="cartTable">
+            <thead>
+              <tr><th>Item</th><th class="right">Price</th><th class="right">Qty</th><th class="right">Total</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+              <tr><td colspan="3" class="right">Subtotal</td><td class="right" id="subtotal">₱0.00</td><td></td></tr>
+            </tfoot>
+          </table>
+
+          <div class="actions">
+            <button id="clear">Clear</button>
+            <button id="print">Print Receipt</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="small">Quick product list (click to add)</div>
+          <div id="quickList" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:520px;overflow:auto;padding:8px;border:1px dashed #e6eef3;border-radius:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Product catalog text (name<TAB>price per line). This is generated from your list.
+    const productText = `Asado roll	55
+Asado square	188
+Baked chicken empanada	65
+Braided ham	47
+Brown sugar raisin	125
+Cheese bites	75
+DOUBLE CHEESE BREAD X4	75
+Cheese roll	37
+Coffee bavarian bun	52
+Coffee roti roll	35
+Cream Bread	80
+Creamy enzaimada	37
+Custard cream bun	38
+Enzaimada bites	88
+Enzaimada rolls	155
+Flossy meat roll	55
+Four Seasons	38
+Garlic bread Butter Toast	69
+HAM & QUEZO	47
+Ham & Cheese Roll	59
+Hongkong milk bread	65
+Hotdog with cheese	47
+Malunggay chiz pandesal	69
+Malunggay tuna	46
+Milky baby pandesal	69
+Milky ube roll	70
+Mongo loaf	65
+Mongo roll	19
+Coco cluster x6	65
+Pandecoco	18
+Pineapple delight	32
+Hopia Mongo	168
+Hopia Ube	168
+Hopia Container	5
+Mochi Bread x6	128
+Special mongo bun	62
+Special pandesal x9	62
+Ube enzaimada single	47
+UBE MARBLE loaf	140
+Ube munchies	85
+Ube quezo pandesal	125
+Ube stick	27
+Wheat bread	75
+Cheese stick bread	45
+Pizzadog	59
+Volcanic Cheese Melt	172
+Pizza round	52
+BABY ENZAIMADA	49
+Spicy Chicken Floss	59
+RAISIN & WALNUT SOUR DOUGH	69
+Malunggay Pandesal x9	69
+Premium Cheeserolls	168
+DULCE de UBE	108
+CHEESY FLOSSY BAR	108
+Double Munchies	55
+Bavarian Munchies	55
+Raisin Minis	55
+Cinnamon rolls	55
+SET1 BM5	119
+SET2 CE5	139
+SET 3 CE2,BMP3	129
+SET 4 MR2, US2, FS1	119
+SET5 MR2, BS1, CRR2	129
+SET6 PAD2, BM1, PCO2	119
+SET7 CCR2, BM1, PCO2	119
+CHEESE BITES BOX	260
+CINNAMON X6	290
+DOUBLE CHEESE ROLL (BOX)	190
+ENZAIMADA TRIO X6	260
+ENZAIMADA TRIO X9	398
+MILKY CRÈAM CHEESE ROLL	260
+MINI CREAM CHEESE ENZAIMADAX12	290
+Paborito Breads x10	190
+SAVORY BUNS x6	210
+SAVORY BUNS x9	295
+SIGNATURE ENZAIMADA X6	225
+SPANISH COFFEE BUN	175
+Banana loaf (New Improved)	188
+Banana slice	45
+Cheezee mamon /pc	49
+Chiffon cake	68
+Choco vanilla	42
+Flossy chiffon x4	110
+Milky egg pie	49
+Mini cakes x12	230
+Mocha vanilla	42
+Sossy flossy roll	110
+Yema Krema	90
+CHIFFON CLOUD	142
+LECHE FLAN CAKE	195
+Mini Jelly Roll	110
+PREMIUM TAISAN BAR	165
+Cheese pie	29
+Choco crinkles	58
+S'mores fudge x8	198
+Fudge brownies x12	125
+Fudge brownies Single	29
+Macaroons	98
+Egg Pie Whole	375
+Box Of Pianono x20	290
+CHOCO CARAMEL  Affordable	575
+Choco Dream Affordable	595
+Choco Fantasy 8X11	795
+Choco Fantasy Affordable	550
+DOLCE DE LECHE 8X11	795
+DOLCE DE LECHE Affordable	575
+FLAVOR PARADE RECTANGLE	985
+Ivory Bloom Affordable	495
+Kitkat Mousse Affordable	695
+Mango Supreme Affordable	595
+Mocha Drip Affordable	595
+MOCHALICIOUS 8X11	795
+Mochalicious Affordable	575
+Nutella Affordable	695
+SALTED CARAMEL WALNUT	695
+The Duet (Choco Mocha)	595
+Ube Halaya Affordable	575
+UBE LECHE FLAN Affordable	595
+CHOCO FUDGE	550
+BERRY BLACK FOREST	695
+MOCHA VANILLA BLISS	495
+YEMA DELIGHT	550
+MINI HAM & CHEESE 	35
+cinnamon rolls single	65
+SNOW CREAM	58
+WHITE CHOCO ALMOND	59
+3 MEATS BUN	99
+THERMAL ICED TEA	45
+THERMAL BAG MEDIUM	165
+THERMAL BAG LARGE	35
+ICED TEA	165
+ALMOND JELLY	75
+ASSTD CANDY 	70
+ASSTD.CHIPS ( 7 SEAS )	175
+ASSTD LOLLIPOP	7
+ASSTD MUSHROOM	140
+ASSTD POLVORON X12	85
+ASSTD BISCUIT	48
+BANANA CHIPS BIG	110
+BARQUILLOS	78
+BARQUILLOS TUB	90
+BIG OVEN BROWNIES	78
+CANDY CANE PER PACK	60
+CARP SARAP	50
+CHARACTER SURPRISE	10
+CHICHA CORN	62
+CHICHA POP	40
+CHICHA POP CON.	70
+CHOCO BISCUIT (ORIGO)	35
+CHOCO BISCUIT STICK	35
+CHOCO NIPS	90
+CHUNKY PEANUT BUTTER	165
+CLASSIC Biscocho	110
+CREAMY APAS	68
+DABOY BITE SIZE	220
+DABOY CHICHARON	85
+DABOY TRAY BACKFAT	265
+DAILY NUT	45
+DAILYPLUS ASST.	135
+DARK/RED VELVET CRINKLES	298
+DILIS CRISPY / SPICY	65
+DILIS MIXED	96
+DINOSAUR EGG BIG	75
+DINOSAUR EGG SMALL	35
+DRIED FRUIT	220
+EGG COINS	145
+EGG CRACKERS	100
+ESPASOL	140
+EVERYDAY MIX NUTS	165
+FISH CRACKER SMALL	25
+FLAVORED GARLIC PEANUT	195
+GARLIC PEANUT POUCH	36
+GOLD COINS POUCH	100
+GUMMY CANDY ASSTD. POUCH	48
+HAMBURGER SQUISHY	50
+HOPIA KING	50
+JELLY BEANS	45
+JUMBO EGG	50
+JUMBO WHIRL LOLLIPOP	15
+Kiamoy Pouch	80
+KROPECK SHRIMP	48
+LECHE FLAN	160
+LENGUA	20
+MACARONI CRACKERS	25
+MIXE)D NUTS POUCH	36
+MUNCH ASSRTED	98
+NACHOS ASSRTED	115
+ORGANIC EGG	350
+OGOY	25
+OGOY STICK	60
+OTAP	25
+OTAP NEW	68
+PABORITA SMALL	60
+PACENCIA WHITE	68
+party lollipop	10
+PEANUT BAR	56
+PEANUT NOUGAT	75
+PEANUT POUCH	85
+PILIPIT BIG X10	95
+POTATO CHIPS	77
+RAINBOW MALLOWS	80
+RED VELVET BROWNIE	85
+ROASTED CASHEW	100
+SECO VARIETY	68
+SHRIMP CRACKERS	18
+SUPER EGG	75
+SMALL MANTOU	100
+SPECIAL BISCOCHO	65
+SPECIAL MONGO BEAN	140
+SPECIAL PABORITA	100
+SQUASH SEEDS	40
+SWEET TAMARIND CANDY	80
+TAMARIND CANDY	57
+TEA EGG	30
+TIKOY HOPIA	110
+TOAST GARLIC /LESS SUGAR	75
+TOASTED MAMON	120
+TOFU ASSORTED FLV.	82
+TORONES POUCH	100
+TORONES TUB	80
+URARO	30
+YEMA MINI PACK	48
+YEMA TOWER	10
+PANCAKE SANDWICHES	140
+ADOBO PEANUT 	38
+SPICY CHICKEN FLOSS	195
+CRISPY PORK FLOSS	195
+MACHANG CHICK N PORK	140
+MACHANG DOUBLE PORK	150
+RICE CRACKERS	95
+KIKIAM	320
+MISUA	250
+DIOK PIT HE (CAM)	320
+3n1 KAKANIN	130
+KUTSINTA	130
+PUTO PAO	145
+SUMAN PINIPIG SMALL	150
+PUTO BIG	100
+PUTO BIGAS	80
+PUTO SMALL	65
+KING'S BOTTLED WATER	20
+CALAMANSI JUICE (Island)	39
+COKE in can	43
+GATORADE 500ML	53
+HERBAL TEA TAMARIND	48
+NATURAL SOYA	35
+NESTEA	37
+NESTLE CHUCKIE	37
+PINEAPPLE JUICE	46
+SELECTA MOO	37
+SIP PURIFIED WATER 1000ml	28
+SMART C+	42
+VITAMILK	3
+ZAMBO CALAMANSI JUICE	39
+ZESTO BIG	15
+ETHLY ALCOHOL	295
+EMPANADA BOX	20
+EMPANADA CONTAINER	4
+FOUNTAIN CANDLE	30
+GOLD NUMBER CANDLE	30
+MILK TEA CUPS 16 oz	68
+MILK TEA CUPS 22 oz	88
+PREMIUM CAKE TOPPER60	60
+SPIRAL CANDLE /PC	55
+STANDARD CAKETOPPER40	40
+TEA EGG CONTAINER	5`;
+
+    // parse product text into objects
+    const products = productText.split('\n').map(line => {
+      const parts = line.split('\t');
+      const name = parts[0].trim();
+      const price = parseFloat((parts[1]||'0').toString().replace(/[^0-9.\-]/g, '')) || 0;
+      return { name, price };
+    }).filter(p=>p.name);
+
+    // DOM refs
+    const select = document.getElementById('productSelect');
+    const search = document.getElementById('search');
+    const qtyInput = document.getElementById('qty');
+    const addBtn = document.getElementById('addBtn');
+    const cartTbody = document.querySelector('#cartTable tbody');
+    const subtotalEl = document.getElementById('subtotal');
+    const quickList = document.getElementById('quickList');
+
+    let cart = [];
+
+    function populateSelect(list){
+      select.innerHTML = '';
+      list.forEach((p,i)=>{
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = `${p.name} — ₱${p.price}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderQuick(list){
+      quickList.innerHTML = '';
+      list.forEach((p,i)=>{
+        const btn = document.createElement('button');
+        btn.style.padding='6px';btn.style.border='1px solid #eef';btn.style.background='#fff';btn.style.borderRadius='6px';
+        btn.textContent = `${p.name} — ₱${p.price}`;
+        btn.title = 'Click to add 1';
+        btn.onclick = ()=>{ addToCart(p,1); };
+        quickList.appendChild(btn);
+      });
+    }
+
+    function addToCart(product, qty){
+      qty = Number(qty)||1;
+      const existing = cart.find(c=>c.name===product.name);
+      if(existing) existing.qty += qty;
+      else cart.push({ ...product, qty });
+      renderCart();
+    }
+
+    function renderCart(){
+      cartTbody.innerHTML='';
+      let subtotal = 0;
+      cart.forEach((item,idx)=>{
+        const tr = document.createElement('tr');
+        const total = item.price * item.qty;
+        subtotal += total;
+        tr.innerHTML = `<td>${item.name}</td><td class="right">₱${item.price.toFixed(2)}</td><td class="right">${item.qty}</td><td class="right">₱${total.toFixed(2)}</td><td class="right"><button data-idx="${idx}">Remove</button></td>`;
+        cartTbody.appendChild(tr);
+      });
+      subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
+      cartTbody.querySelectorAll('button').forEach(btn=>btn.onclick=function(){ const i=+this.dataset.idx; cart.splice(i,1); renderCart(); });
+    }
+
+    // initial populate
+    populateSelect(products);
+    renderQuick(products.slice(0,80)); // show first 80 as quick list
+
+    // search
+    search.addEventListener('input',()=>{
+      const q = search.value.trim().toLowerCase();
+      const filtered = products.filter(p=>p.name.toLowerCase().includes(q));
+      populateSelect(filtered);
+      renderQuick(filtered.slice(0,80));
+    });
+
+    addBtn.addEventListener('click',()=>{
+      const idx = +select.value;
+      const list = Array.from(select.options).map(o=>o.textContent);
+      // since select was populated with filtered products, find product by shown text
+      const optionText = select.options[select.selectedIndex].textContent;
+      const matchName = optionText.split(' — ₱')[0];
+      const prod = products.find(p=>p.name===matchName) || products[idx];
+      addToCart(prod, Number(qtyInput.value)||1);
+    });
+
+    // clear
+    document.getElementById('clear').addEventListener('click',()=>{ cart = []; renderCart(); });
+
+    // print receipt (simple)
+    document.getElementById('print').addEventListener('click',()=>{
+      const receipt = generateReceipt();
+      const w = window.open('', '_blank');
+      w.document.write(receipt);
+      w.document.close();
+      w.print();
+    });
+
+    function generateReceipt(){
+      const lines = cart.map(i=>`<tr><td>${i.name}</td><td style="text-align:right">${i.qty} x ₱${i.price.toFixed(2)}</td><td style="text-align:right">₱${(i.qty*i.price).toFixed(2)}</td></tr>`).join('');
+      const subtotal = cart.reduce((s,i)=>s + i.price*i.qty,0);
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Receipt</title><style>body{font-family:Arial;padding:16px}table{width:100%;border-collapse:collapse}td{padding:6px;border-bottom:1px dashed #ddd}</style></head><body><h2>Receipt</h2><table>${lines}</table><hr><h3 style="text-align:right">Total: ₱${subtotal.toFixed(2)}</h3></body></html>`;
+      return html;
+    }
+
+  </script>
+</body>
+</h
