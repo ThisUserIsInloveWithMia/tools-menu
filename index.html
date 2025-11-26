@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>King's Tools</title>
 
+  <!-- Android / PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- iOS Support -->
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="KBS Tools">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <style>
     body {
       font-family: 'Poppins', Arial, sans-serif;
@@ -15,25 +25,107 @@
       background: linear-gradient(135deg, #4f46e5, #ff7e00);
       color: #fff;
     }
-
     h1 { margin-bottom: 10px; font-size: 2em; text-align: center; text-shadow: 0 3px 8px rgba(0,0,0,0.2); }
     h2 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
     h5 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
 
     .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-
-    .card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: rgba(255,255,255,0.10);
-      padding: 20px 25px;
-      border-radius: 18px;
-      border: 2px solid rgba(255,255,255,0.28);
-      backdrop-filter: blur(6px);
+    .menu a {
+      display: inline-block; padding: 16px 30px; border-radius: 12px;
+      font-size: 1.1em; font-weight: 600; text-decoration: none;
+      color: #fff; background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(6px); transition: all 0.3s ease; text-align: center;
+    }
+    .menu a:hover {
+      background: #fff; color: #333; transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .ver {
+      font-size: 0.75em;
+      font-weight: 500;
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+      display: inline-block;
+    }
+    .whatsnew-btn {
+      margin-top: 6px;
+      font-size: 0.8em;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .whatsnew-btn:hover {
+      background: #fff; color: #333; transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
-    .menu a {
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:1200;}
+    .modal-content{background:#fff;color:#333;padding:20px;border-radius:12px;max-width:400px;width:90%;text-align:left;}
+    .modal-content h3{margin-top:0;color:#ff7e00;}
+    .close-btn{margin-top:12px;padding:8px 14px;border:none;border-radius:20px;background:#4f46e5;color:#fff;cursor:pointer;}
+    .close-btn:hover{background:#ff7e00;}
+  </style>
+</head>
+<body>
+  <h1>Welcome — Choose a Tool!</h1>
+  <h2>This is focused for KBS only</h2>
+  <h5>by Lemuel Ponciano</h5>
+
+  <div class="menu">
+
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <a href="DSIRProcessor_v6_3_UI_layout.html">📊 DSIR Processor<br><span class="ver">v6.3</span></a>
+      <button class="whatsnew-btn" onclick="openDSIRWhatsNew()">🆕 What's New?</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <a href="InvoiceGenerator.html">🧾 Receipt Generator<br><span class="ver">v5</span></a>
+      <button class="whatsnew-btn" onclick="openReceiptWhatsNew()">🆕 What's New?</button>
+    </div>
+
+    <a href="AutoPMIX.html">⚙️ Product Mix Generator<br><span class="ver">v16</span></a>
+
+    <a href="simplepos.html">🛒 Simple POS<br><span class="ver">v1</span></a>
+
+  </div>
+
+  <div id="dsirWhatsNewModal" class="modal">
+    <div class="modal-content">
+      <h3>What's New? DSIR v6.3</h3>
+      <ul>
+        <li>Updated DSIR Layout up to October 1, 2025</li>
+        <li>Added multi-day dropdown for sales report</li>
+      </ul>
+      <button class="close-btn" onclick="closeDSIRWhatsNew()">Cool!</button>
+    </div>
+  </div>
+
+  <div id="receiptWhatsNewModal" class="modal">
+    <div class="modal-content">
+      <h3>What's New? Receipt Generator v5</h3>
+      <ul>
+        <li>Updated to October 1, 2025 price adjustments</li>
+        <li>Added support for large receipt batches</li>
+      </ul>
+      <button class="close-btn" onclick="closeReceiptWhatsNew()">Cool!</button>
+    </div>
+  </div>
+
+  <script>
+    function openDSIRWhatsNew(){ document.getElementById("dsirWhatsNewModal").style.display="flex"; }
+    function closeDSIRWhatsNew(){ document.getElementById("dsirWhatsNewModal").style.display="none"; }
+    function openReceiptWhatsNew(){ document.getElementById("receiptWhatsNewModal").style.display="flex"; }
+    function closeReceiptWhatsNew(){ document.getElementById("receiptWhatsNewModal").style.display="none"; }
+  </script>
+</body>
+</html>
       display: inline-block;
       padding: 16px 30px;
       border-radius: 12px;
