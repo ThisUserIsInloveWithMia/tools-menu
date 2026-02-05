@@ -223,40 +223,52 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 <script>
 // ===== Full Default Product Lists =====
 const DEFAULT_BREADS = {
-"Asado roll":55,"Asado square":188,"DOUBLE CHEESE ROLL (BOX)":188,"Baked chicken empanada":65,
-"Braided ham":47,"Brown sugar raisin":125,"Cheese bites":75,"DOUBLE CHEESE BREAD X4":75,
-"Cheese roll":37,"Coffee bavarian bun":52,"Coffee roti roll":35,"Cream Bread":80,"Creamy enzaimada":37,
-"Custard cream bun":38,"Enzaimada bites":88,"Enzaimada rolls":155,"Flossy meat roll":55,"Four Seasons":38,
-"Garlic bread Butter Toast":69,"HAM & QUEZO":47,"Ham & Cheese Roll":59,"Hongkong milk bread":59,
-"Hotdog with cheese":47,"Malunggay chiz pandesal":69,"Malunggay tuna":46,"Milky baby pandesal":69,
-"Milky ube roll":70,"Premium Cheese Bread":150,"Mongo loaf":65,"Mongo roll":19,"Coco cluster x6":65,
-"Pandecoco":18,"Pineapple delight":32,"SET1 BM5":119,"SET2 CE5":139,"SET 3 CE2,BMP3":129,
-"SET 4 MR2, US2, FS1":119,"SET5 MR2, BS1, CRR2":129,"Hopia Mongo":168,"Hopia Ube":168,
-"Mochi Bread x6":128,"Special mongo bun":62,"Special pandesal x9":62,"Ube enzaimada single":47,
-"Ube macapuno loaf":77,"Ube munchies":85,"Ube quezo pandesal":125,"Ube stick":22,"Wheat bread":75,
-"Cheese stick bread":45,"Pizzadog":59,"Volcanic Cheese Melt":172,"Pizza round":52,"BABY ENZAIMADA":49,
-"Spicy Chicken Floss":59,"RAISIN & WALNUT SOUR DOUGH":69,"Malunggay Pandesal x9":69,
-"Premium Cheeserolls":168,"DULCE de UBE":108,"CHEESY FLOSSY BAR":108,"SPANISH COFFEE BUN":175,
-"MILKY CRÈAM CHEESE ROLL":245,"Double Munchies":55,"Bavarian Munchies":55,"CINNAMON X6":195,
-"Raisin Minis":55,"Cinamon rolls":55,"SAVORY BUNS x6":210,"Paborito Breads x10":190,
-"MINI CREAMCHEESE ENZAIMADA":290,"SET6 PAD2, BM1, PCO2":119,"SET7 CCR2, BM1, PCO2":119,
-"ENZAIMADA TRIO X6":275,"SIGNATURE ENZAIMADA":225,"CHEESE BITES BOX":225,"SAVORY BUNS x9":295,
-"Banana loaf (New Improved)":188,"Banana slice":45,"Cheezee mamon /pc":49,"Cheese pie":29,
-"Chiffon cake":68,"Choco crinkles":58,"Choco vanilla":42,"Flossy chiffon x4":110,
-"Fudge brownies x12":125,"Milky egg pie":49,"Mini cakes x12":230,"Mocha vanilla":42,
-"S'mores fudge x8":198,"Sossy flossy roll":110,"Yema Krema":90,"Egg Pie Whole":375,
-"Fudge brownies Single":29,"Macaroons":98,"Box Of Pianono x15":290,"Fluffy Chiffon Large":142,
-"LECHE FLAN CAKE":195,"Mini Jelly Roll":110,"PREMIUM TAISAN BAR":165
+"3-Meat Buns": 99, "Asado Roll": 55, "Asado Square": 188, "Baby Enzaimada": 49, 
+"Baked Chicken Empanada": 65, "BAKED CHICKEN EMPANADA x10": 630, "BAKED CHICKEN EMPANADA x3": 192, 
+"BAKED CHICKEN EMPANADA x8": 510, "Bavarian Munchies": 55, "Blueberry Cinnamon Single": 65, 
+"Braided Ham": 47, "Butter Toast": 48, "Brown Sugar Raisin": 125, "Cheese Bites x10": 75, 
+"Cream Bread": 80, "Creamy Enzaimada": 37, "Custard Cream Bun": 38, "Double Cheese Bread x4": 75, 
+"Double Muncheese": 55, "Dulce De Ube": 108, "Enzaimada Bites": 88, "Enzaimada Rolls": 155, 
+"Flossy Cheese Bar": 108, "Flossy Meat Roll (Chicken)": 55, "Four Seasons": 38, 
+"Garlic Butter Toast": 69, "Ham & Cheese Roll": 59, "Ham & Queso": 47, "Hongkong Milk Bread": 65, 
+"Hopia Mongo/Ube x20": 168, "Hotdog With Cheese": 47, "Lotus Biscoff Cinnamon Single": 65, 
+"Malunggay Chiz Pandesal X9": 69, "Malunggay Pandesal x9": 69, "Malunggay Tuna": 46, 
+"Milky Baby Pandesal": 75, "Milky Ube Roll x6": 70, "Mochi Bread x6": 128, "Mongo Loaf": 65, 
+"Nutella Cinnamon Single": 65, "Pandecoco": 18, "Pineapple Delight": 32, "Pineapple Munchies": 55, 
+"Pistacchio Cinnamon Single": 65, "Pizza Round": 52, "Pizzadog": 59, "Premium Cheese Rolls": 168, 
+"Raisin & Walnut Sourdough": 69, "Raisin Minis": 55, "S'Mores Cinnamon Single": 65, 
+"Snow Cream": 58, "Special Mongo Bun": 62, "Special Pandesal x9": 62, "Spicy Chicken Floss": 59, 
+"Strawberry Cinnamon Single": 65, "Ube Enzaimada Single": 47, "Ube Macapuno Loaf": 77, 
+"Ube Marble Loaf": 140, "Ube Munchies x10": 85, "Ube Queso Pandesal x6": 125, 
+"Volcanic Cheese Melt": 172, "Wheat Bread": 75, "White Chocolate Almond": 59, 
+"Soft Sourdough (Plain)": 35, "Soft Sourdough (Sesame)": 35, "Cheese Roll": 37, 
+"Cheese Stick Bread": 45, "Cinnamon Roll": 55, "Coco Cluster x6": 65, "Coffee Bavarian Bun": 52, 
+"Coffee Roti Roll": 35, "Banana Loaf (New Improved)": 188, "Banana Slice": 45, "Cheese Pie": 29, 
+"Chiffon cake": 68, "Choco Crinkles": 58, "Choco Vanilla Sandwich": 42, "Cotton Cloud": 142, 
+"Flossy Chiffon x4": 110, "Fudge Brownies Single": 29, "Fudge Brownies x12": 128, 
+"Leche Flan Cake": 195, "Macaroons x11": 98, "Milky Egg Pie Slice": 49, "Milky Egg Pie Whole": 375, 
+"Mini Jelly Roll x12": 220, "Mini Jelly Roll x8": 110, "Mini Party Cakes x12": 230, 
+"Mocha Vanilla Sandwich": 42, "Premium Taisan Bar": 85, "S'mores Fudge x8": 198, 
+"Sossy Flossy Roll": 110, "Very Cheesy Mamon": 49, "Yema Krema": 90, "SET 1 BM5": 119, 
+"SET 2 CE5": 139, "SET 3 CE2, BMP3": 129, "SET 4 MR2, US2, FS1": 119, "SET 5 MR2, BS1, CRR2": 129, 
+"SET 6 PAD2, BM1, PCO2": 119, "SET 7 CCR2, BM1, PCO2": 119, "Box of Pianono x20": 290, 
+"Cheese Bites x24": 260, "Double Cheese Roll x8": 190, "Enzaimada Trio x6": 260, 
+"Enzaimada Trio x9": 398, "Milky Cream Cheese Roll x8": 260, "Mini Cream Cheese Enzaimada": 290, 
+"Paborito Box x10": 190, "Savory Buns x6": 210, "Savory Buns x9": 295, "Signature Enzaimada x6": 225, 
+"Signature Enzaimada x9": 330, "Soft Cinnamon Rolls x6": 290, "Spanish Coffee Bun x9": 175
 };
+
 const DEFAULT_CAKES = {
-"Choco Fantasy 8X11":795,"DOLCE DE LECHE 8X11":795,"MOCHALICIOUS 8X11":795,
-"SALTED CARAMEL WALNUT":695,"FLAVOR PARADE RECTANGLE":985,
-"Ivory Bloom Affordable":495,"DOLCE DE LECHE Affordable":575,"UBE LECHE FLAN Affordable":595,
-"Ube Halaya Affordable":575,"Choco Fantasy Affordable":550,"Mochalicious Affordable":575,
-"Choco Caramel Affordable":575,"Choco Dream Affordable":595,"Mango Supreme Affordable":595,
-"Mocha Drip Affordable":495,"Yema Cake Affordable":495,"The Duet (Choco Mocha)":595,
-"Kitkat Mousse Affordable":695,"Nutella Affordable":695
+"Choco Fudge Bar": 285, "Mocha Caramel Bar": 285, "Ivory Blossom": 495, 
+"Mocha Vanilla Bliss": 495, "Choco Fantasy": 550, "Choco Fudge": 550, 
+"Yema Delight": 550, "Choco Caramel": 575, "Dulce de Leche": 575, 
+"Mochalicious": 575, "Ube Halaya": 575, "Choco Dream": 595, 
+"Mango Supreme": 595, "Salted Caramel Walnut": 595, "The Duet": 595, 
+"Ube Leche Flan": 595, "Berry Black Forest": 695, "Kitkat Mousse": 695, 
+"Nutella": 695, "Choco Fantasy Rectangle": 795, "Dulce de Leche Rectangle": 795, 
+"Mochalicious Rectangle": 795, "The Flavor Parade": 985
 };
+
 
 let breads = {}, cakes = {};
 function loadPrices(){
