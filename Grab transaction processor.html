@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Grab Multi-Report Tool - Fixed Calculations</title>
+    <title>Grab Multi-Report Tool</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding:20px; background:#f0f2f5; color: #333; }
@@ -26,7 +26,8 @@
 
 <div class="container">
     <div class="card">
-        <h2>Grab Multi-CSV Processor</h2>
+        <h2>Grab Multi-CSV Transaction Sort</h2>
+        <h3>by Lemuel Ponciano</h3>
         <p style="font-size:0.9em; color:#666;">Calculation fix: Now includes Adjustments in Net Settlement.</p>
         <input type="file" id="csvFiles" accept=".csv" multiple>
         <button class="btn btn-reset" onclick="window.location.reload()">Clear / Restart</button>
@@ -92,7 +93,7 @@
             return `<tr>
                 <td>${r["Transfer Date"] || ''}</td>
                 <td>${r["Updated On"] || r["Date"] || ''}</td>
-                <td><b>${r["Short Order ID"] || '—'}</b></td>
+                <td><b>${r["Short Order ID"] || 'â€”'}</b></td>
                 <td>${r["Category"] || ''}</td>
                 <td>${s.toFixed(2)}</td>
                 <td class="${c < 0 ? 'negative' : ''}">${c.toFixed(2)}</td>
@@ -194,4 +195,5 @@
     });
 </script>
 </body>
+
 </html>
