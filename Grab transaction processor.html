@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Grab Multi-Report Tool - Transfer Date Column</title>
+    <title>Grab Multi-Report Tool - Fixed Calculations</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding:20px; background:#f0f2f5; color: #333; }
@@ -27,7 +27,7 @@
 <div class="container">
     <div class="card">
         <h2>Grab Multi-CSV Processor</h2>
-        <p style="font-size:0.9em; color:#666;">Transfer Date column added as the first column.</p>
+        <p style="font-size:0.9em; color:#666;">Calculation fix: Now includes Adjustments in Net Settlement.</p>
         <input type="file" id="csvFiles" accept=".csv" multiple>
         <button class="btn btn-reset" onclick="window.location.reload()">Clear / Restart</button>
     </div>
@@ -79,11 +79,15 @@
     });
 
     function renderReport(data, name) {
-        let fSales = 0, fComm = 0, fAds = 0;
+        let fSales = 0, fComm = 0, fNet = 0;
         let rowsHtml = data.map(r => {
-            let s = parseVal(r["Net Sales"]), c = parseVal(r["Order commission"]), t = parseVal(r["Total"]);
-            fSales += s; fComm += c;
-            if (r["Category"] === "Advertisement") fAds += t;
+            let s = parseVal(r["Net Sales"]), 
+                c = parseVal(r["Order commission"]), 
+                t = parseVal(r["Total"]);
+            
+            fSales += s; 
+            fComm += c;
+            fNet += t; // Correctly sums all rows including Adjustments
             
             return `<tr>
                 <td>${r["Transfer Date"] || ''}</td>
@@ -96,10 +100,15 @@
             </tr>`;
         }).join('');
 
-        let fNet = fSales + fComm + fAds;
-        totals.sales += fSales; totals.comm += fComm; totals.ads += fAds; totals.files++;
+        // Calculate 'Other' category (Ads + Adjustments) for the summary
+        let fOther = fNet - fSales - fComm;
 
-        sessionData.push({ name: name, rows: data, stats: { s: fSales, c: fComm, a: fAds, n: fNet } });
+        totals.sales += fSales; 
+        totals.comm += fComm; 
+        totals.ads += fOther; 
+        totals.files++;
+
+        sessionData.push({ name: name, rows: data, stats: { s: fSales, c: fComm, a: fOther, n: fNet } });
 
         const div = document.createElement('div');
         div.className = 'report-box';
@@ -115,7 +124,7 @@
             </tr></thead>
             <tbody>${rowsHtml}</tbody></table>
             <div class="file-footer">
-                Sales: ${fSales.toFixed(2)} | Comm: ${fComm.toFixed(2)} | Ads: ${fAds.toFixed(2)} | <b>Net Settlement: ${fNet.toFixed(2)}</b>
+                Sales: ${fSales.toFixed(2)} | Comm: ${fComm.toFixed(2)} | Adjustments/Ads: ${fOther.toFixed(2)} | <b>Net Settlement: ${fNet.toFixed(2)}</b>
             </div>`;
         document.getElementById('reports-list').prepend(div);
         updateSummary();
@@ -127,7 +136,7 @@
             <div>Files: <b>${totals.files}</b></div>
             <div>Total Sales: <b>${totals.sales.toFixed(2)}</b></div>
             <div>Total Comm: <b class="negative">${totals.comm.toFixed(2)}</b></div>
-            <div>Total Ads: <b class="negative">${totals.ads.toFixed(2)}</b></div>
+            <div>Total Adj/Ads: <b class="negative">${totals.ads.toFixed(2)}</b></div>
             <div style="grid-column: span 4; font-size: 22px; color:#27ae60; margin-top:15px; border-top: 1px solid #ddd; padding-top:10px;">
                 Combined Grand Net: <b>${net.toLocaleString(undefined, {minimumFractionDigits:2})}</b>
             </div>`;
@@ -136,21 +145,18 @@
     document.getElementById('btnDownload').addEventListener('click', function() {
         try {
             const wb = XLSX.utils.book_new();
-            
-            // 1. Grand Summary Tab
             const sumData = [
                 ["GRAND SESSION SUMMARY"],
                 ["Total Files Processed", totals.files],
                 ["Total Sales", totals.sales.toFixed(2)],
                 ["Total Commission", totals.comm.toFixed(2)],
-                ["Total Ads", totals.ads.toFixed(2)],
+                ["Total Adjustments/Ads", totals.ads.toFixed(2)],
                 ["COMBINED SETTLEMENT", (totals.sales + totals.comm + totals.ads).toFixed(2)]
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), "GRAND_SUMMARY");
 
-            // 2. Individual Tabs
             let usedNames = {};
-            sessionData.forEach((item, index) => {
+            sessionData.forEach((item) => {
                 let dateStr = "Report";
                 if (item.rows && item.rows.length > 0 && (item.rows[0]["Updated On"] || item.rows[0]["Date"])) {
                     let rawDate = (item.rows[0]["Updated On"] || item.rows[0]["Date"]).trim();
@@ -177,7 +183,6 @@
 
                 wsData.push({}); 
                 wsData.push({ "Category": "FILE TOTALS", "Net Sales": item.stats.s, "Commission": item.stats.c, "Total": item.stats.n });
-                wsData.push({ "Category": "TOTAL ADS", "Total": item.stats.a });
 
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), sName);
             });
