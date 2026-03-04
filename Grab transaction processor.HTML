@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grab Multi-Report Tool - Fixed Calculations</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding:20px; background:#f0f2f5; color: #333; }
+        .container { max-width: 1250px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #summary-section { border: 2px solid #2ecc71; background: #fafffa; display: none; }
+        .report-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #dcdfe6; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
+        th, td { border: 1px solid #ebeef5; padding: 10px; text-align: left; }
+        th { background: #f5f7fa; color: #909399; }
+        .negative { color: #f56c6c; font-weight: bold; }
+        .btn { border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-main { background: #27ae60; color: white; }
+        .btn-main:hover { background: #219150; }
+        .btn-reset { background: #f56c6c; color: white; margin-left: 10px; }
+        input[type="file"] { border: 2px dashed #dcdfe6; padding: 20px; width: 100%; box-sizing: border-box; margin-bottom: 10px; cursor: pointer; }
+        .file-footer { background:#f8f9fa; padding:12px; border-radius:5px; border-left: 4px solid #27ae60; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Grab Multi-CSV Processor</h2>
+        <p style="font-size:0.9em; color:#666;">Calculation fix: Now includes Adjustments in Net Settlement.</p>
+        <input type="file" id="csvFiles" accept=".csv" multiple>
+        <button class="btn btn-reset" onclick="window.location.reload()">Clear / Restart</button>
+    </div>
+
+    <div id="summary-section" class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>?? Session Grand Summary</h3>
+            <button class="btn btn-main" id="btnDownload">Download Combined Excel (.xlsx)</button>
+        </div>
+        <div id="summary-content" style="margin-top:15px; display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;"></div>
+    </div>
+
+    <div id="reports-list"></div>
+</div>
+
+<script>
+    let sessionData = [];
+    let totals = { sales: 0, comm: 0, ads: 0, files: 0 };
+
+    function parseVal(v) {
+        if (!v) return 0;
+        let s = v.toString().replace(/[?,]/g, '').trim();
+        if (s.startsWith('(') && s.endsWith(')')) s = '-' + s.slice(1, -1);
+        return parseFloat(s) || 0;
+    }
+
+    document.getElementById('csvFiles').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (!files.length) return;
+        document.getElementById('summary-section').style.display = 'block';
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const lines = event.target.result.split(/\r?\n/).filter(l => l.trim());
+                if (lines.length < 1) return;
+                
+                const headers = lines[0].split(",").map(h => h.trim());
+                const rows = lines.slice(1).map(l => {
+                    let vals = l.split(",");
+                    let o = {};
+                    headers.forEach((h, i) => o[h] = vals[i]);
+                    return o;
+                });
+                renderReport(rows, file.name);
+            };
+            reader.readAsText(file);
+        });
+    });
+
+    function renderReport(data, name) {
+        let fSales = 0, fComm = 0, fNet = 0;
+        let rowsHtml = data.map(r => {
+            let s = parseVal(r["Net Sales"]), 
+                c = parseVal(r["Order commission"]), 
+                t = parseVal(r["Total"]);
+            
+            fSales += s; 
+            fComm += c;
+            fNet += t; // Correctly sums all rows including Adjustments
+            
+            return `<tr>
+                <td>${r["Transfer Date"] || ''}</td>
+                <td>${r["Updated On"] || r["Date"] || ''}</td>
+                <td><b>${r["Short Order ID"] || '—'}</b></td>
+                <td>${r["Category"] || ''}</td>
+                <td>${s.toFixed(2)}</td>
+                <td class="${c < 0 ? 'negative' : ''}">${c.toFixed(2)}</td>
+                <td class="${t < 0 ? 'negative' : ''}">${t.toFixed(2)}</td>
+            </tr>`;
+        }).join('');
+
+        // Calculate 'Other' category (Ads + Adjustments) for the summary
+        let fOther = fNet - fSales - fComm;
+
+        totals.sales += fSales; 
+        totals.comm += fComm; 
+        totals.ads += fOther; 
+        totals.files++;
+
+        sessionData.push({ name: name, rows: data, stats: { s: fSales, c: fComm, a: fOther, n: fNet } });
+
+        const div = document.createElement('div');
+        div.className = 'report-box';
+        div.innerHTML = `<h3>?? ${name}</h3>
+            <table><thead><tr>
+                <th>Transfer Date</th>
+                <th>Updated On</th>
+                <th>Short ID</th>
+                <th>Category</th>
+                <th>Net Sales</th>
+                <th>Comm.</th>
+                <th>Total</th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody></table>
+            <div class="file-footer">
+                Sales: ${fSales.toFixed(2)} | Comm: ${fComm.toFixed(2)} | Adjustments/Ads: ${fOther.toFixed(2)} | <b>Net Settlement: ${fNet.toFixed(2)}</b>
+            </div>`;
+        document.getElementById('reports-list').prepend(div);
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const net = totals.sales + totals.comm + totals.ads;
+        document.getElementById('summary-content').innerHTML = `
+            <div>Files: <b>${totals.files}</b></div>
+            <div>Total Sales: <b>${totals.sales.toFixed(2)}</b></div>
+            <div>Total Comm: <b class="negative">${totals.comm.toFixed(2)}</b></div>
+            <div>Total Adj/Ads: <b class="negative">${totals.ads.toFixed(2)}</b></div>
+            <div style="grid-column: span 4; font-size: 22px; color:#27ae60; margin-top:15px; border-top: 1px solid #ddd; padding-top:10px;">
+                Combined Grand Net: <b>${net.toLocaleString(undefined, {minimumFractionDigits:2})}</b>
+            </div>`;
+    }
+
+    document.getElementById('btnDownload').addEventListener('click', function() {
+        try {
+            const wb = XLSX.utils.book_new();
+            const sumData = [
+                ["GRAND SESSION SUMMARY"],
+                ["Total Files Processed", totals.files],
+                ["Total Sales", totals.sales.toFixed(2)],
+                ["Total Commission", totals.comm.toFixed(2)],
+                ["Total Adjustments/Ads", totals.ads.toFixed(2)],
+                ["COMBINED SETTLEMENT", (totals.sales + totals.comm + totals.ads).toFixed(2)]
+            ];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), "GRAND_SUMMARY");
+
+            let usedNames = {};
+            sessionData.forEach((item) => {
+                let dateStr = "Report";
+                if (item.rows && item.rows.length > 0 && (item.rows[0]["Updated On"] || item.rows[0]["Date"])) {
+                    let rawDate = (item.rows[0]["Updated On"] || item.rows[0]["Date"]).trim();
+                    dateStr = rawDate.split(" ").slice(0, 3).join(" "); 
+                }
+
+                let sName = dateStr.replace(/[\[\]\*\?\:\\\/]/g, "").substring(0, 25);
+                if (usedNames[sName]) {
+                    let counter = 1;
+                    while (usedNames[sName + "_" + counter]) { counter++; }
+                    sName = sName + "_" + counter;
+                }
+                usedNames[sName] = true;
+
+                const wsData = item.rows.map(r => ({
+                    "Transfer Date": r["Transfer Date"],
+                    "Updated On": r["Updated On"] || r["Date"],
+                    "Short Order ID": r["Short Order ID"],
+                    "Category": r["Category"],
+                    "Net Sales": parseVal(r["Net Sales"]),
+                    "Commission": parseVal(r["Order commission"]),
+                    "Total": parseVal(r["Total"])
+                }));
+
+                wsData.push({}); 
+                wsData.push({ "Category": "FILE TOTALS", "Net Sales": item.stats.s, "Commission": item.stats.c, "Total": item.stats.n });
+
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), sName);
+            });
+
+            XLSX.writeFile(wb, `Grab_Combined_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        } catch (err) {
+            alert("Export Failed: " + err.message);
+        }
+    });
+</script>
+</body>
+</html>
