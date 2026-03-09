@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Grab Master Report Tool - Fixed Numbers</title>
+    <title>Grab Master Report Tool - Fixed</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding:20px; background:#f0f2f5; color: #333; }
@@ -25,14 +25,15 @@
 <div class="container">
     <div class="card">
         <h2>Grab Multi-CSV Processor</h2>
+        <p style="font-size:0.9em; color:#666;">Numbers fixed. Transfer Date is 1st column. Totals included in Excel.</p>
         <input type="file" id="csvFiles" accept=".csv" multiple>
-        <button class="btn btn-reset" onclick="window.location.reload()">Clear / Restart</button>
+        <button class="btn btn-reset" onclick="window.location.reload()">Reset All</button>
     </div>
 
     <div id="summary-section">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>📊 Combined Session Summary</h3>
-            <button class="btn btn-main" id="btnDownload">Download All as Excel (.xlsx)</button>
+            <h3>📊 Session Grand Summary</h3>
+            <button class="btn btn-main" id="btnDownload">Download Combined Excel (.xlsx)</button>
         </div>
         <div id="summary-content" style="margin-top:15px; display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;"></div>
     </div>
@@ -42,29 +43,31 @@
 
 <script>
     let sessionData = [];
-    let totals = { sales: 0, comm: 0, ads: 0, files: 0 };
+    let totals = { sales: 0, comm: 0, ads: 0, net: 0, files: 0 };
 
     function parseVal(v) {
         if (!v) return 0;
         let s = v.toString().replace(/[₱,]/g, '').trim();
         if (s.startsWith('(') && s.endsWith(')')) s = '-' + s.slice(1, -1);
-        return parseFloat(s) || 0;
+        let num = parseFloat(s);
+        return isNaN(num) ? 0 : num;
     }
 
-    // Advanced CSV parser to handle commas inside quotes (e.g., "GF-301, GF-814")
+    // ROBUST CSV PARSER: Handles commas inside quotes so numbers don't turn to zero
     function parseCSVLine(text) {
-        let ret = [];
-        let inQuote = false;
-        let cur = '';
-        for (let char of text) {
-            if (char === '"') inQuote = !inQuote;
-            else if (char === ',' && !inQuote) {
-                ret.push(cur.trim());
-                cur = '';
-            } else cur += char;
+        const result = [];
+        let curVal = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) {
+                result.push(curVal.trim());
+                curVal = '';
+            } else curVal += char;
         }
-        ret.push(cur.trim());
-        return ret;
+        result.push(curVal.trim());
+        return result;
     }
 
     document.getElementById('csvFiles').addEventListener('change', function(e) {
@@ -81,9 +84,9 @@
                 const headers = parseCSVLine(lines[0]);
                 const rows = lines.slice(1).map(l => {
                     let vals = parseCSVLine(l);
-                    let o = {};
-                    headers.forEach((h, i) => o[h] = vals[i]);
-                    return o;
+                    let obj = {};
+                    headers.forEach((h, i) => obj[h] = vals[i]);
+                    return obj;
                 });
                 renderReport(rows, file.name);
             };
@@ -92,10 +95,10 @@
     });
 
     function renderReport(data, name) {
-        let fSales = 0, fComm = 0, fAds = 0;
+        let fSales = 0, fComm = 0, fAds = 0, fNet = 0;
         let rowsHtml = data.map(r => {
             let s = parseVal(r["Net Sales"]), c = parseVal(r["Order commission"]), t = parseVal(r["Total"]);
-            fSales += s; fComm += c;
+            fSales += s; fComm += c; fNet += t;
             if (r["Category"] === "Advertisement" || r["Category"] === "Adjustment") fAds += t;
             
             return `<tr>
@@ -109,15 +112,16 @@
             </tr>`;
         }).join('');
 
-        let fNet = fSales + fComm + (fAds < 0 ? fAds : 0); // Logic fix for deductions
-        totals.sales += fSales; totals.comm += fComm; totals.ads += (fAds < 0 ? fAds : 0); totals.files++;
+        totals.sales += fSales; totals.comm += fComm; totals.ads += fAds; totals.net += fNet; totals.files++;
 
         sessionData.push({ name: name, rows: data, stats: { s: fSales, c: fComm, a: fAds, n: fNet } });
 
         const div = document.createElement('div');
         div.className = 'report-box';
         div.innerHTML = `<h3>📄 ${name}</h3>
-            <table><thead><tr><th>Transfer Date</th><th>Updated On</th><th>Short ID</th><th>Category</th><th>Net Sales</th><th>Comm.</th><th>Total</th></tr></thead>
+            <table><thead><tr>
+                <th>Transfer Date</th><th>Updated On</th><th>Short ID</th><th>Category</th><th>Net Sales</th><th>Comm.</th><th>Total</th>
+            </tr></thead>
             <tbody>${rowsHtml}</tbody></table>
             <div style="background:#f8f9fa; padding:12px; border-radius:5px; border-left: 4px solid #27ae60;">
                 Sales: ${fSales.toFixed(2)} | Comm: ${fComm.toFixed(2)} | Ads/Adj: ${fAds.toFixed(2)} | <b>Net Settlement: ${fNet.toFixed(2)}</b>
@@ -127,20 +131,32 @@
     }
 
     function updateSummary() {
-        const net = totals.sales + totals.comm + totals.ads;
         document.getElementById('summary-content').innerHTML = `
             <div>Files: <b>${totals.files}</b></div>
             <div>Total Sales: <b>${totals.sales.toFixed(2)}</b></div>
             <div>Total Comm: <b class="negative">${totals.comm.toFixed(2)}</b></div>
             <div>Total Ads/Adj: <b class="negative">${totals.ads.toFixed(2)}</b></div>
             <div style="grid-column: span 4; font-size: 22px; color:#27ae60; border-top: 1px solid #ddd; padding-top:10px;">
-                Grand Net Settlement: <b>${net.toLocaleString(undefined, {minimumFractionDigits:2})}</b>
+                Grand Combined Net: <b>${totals.net.toLocaleString(undefined, {minimumFractionDigits:2})}</b>
             </div>`;
     }
 
     document.getElementById('btnDownload').addEventListener('click', function() {
         try {
             const wb = XLSX.utils.book_new();
+            
+            // 1. GRAND SUMMARY SHEET
+            const sumData = [
+                ["GRAND SESSION SUMMARY"],
+                ["Total Files Processed", totals.files],
+                ["Total Sales", totals.sales.toFixed(2)],
+                ["Total Commission", totals.comm.toFixed(2)],
+                ["Total Ads/Adjustments", totals.ads.toFixed(2)],
+                ["COMBINED SETTLEMENT", totals.net.toFixed(2)]
+            ];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), "GRAND_SUMMARY");
+
+            // 2. INDIVIDUAL DATE SHEETS
             let usedNames = {};
             sessionData.forEach((item, index) => {
                 let dateStr = item.rows[0]["Updated On"] ? item.rows[0]["Updated On"].split(" ").slice(0, 3).join(" ") : "Report";
@@ -157,10 +173,17 @@
                     "Commission": parseVal(r["Order commission"]),
                     "Total": parseVal(r["Total"])
                 }));
+
+                // RESTORE SHEET FOOTER TOTALS
+                wsData.push({}); 
+                wsData.push({ "Category": "FILE TOTALS", "Net Sales": item.stats.s, "Commission": item.stats.c, "Total": item.stats.n });
+                wsData.push({ "Category": "ADJUSTMENTS/ADS", "Total": item.stats.a });
+
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), sName);
             });
-            XLSX.writeFile(wb, "Grab_Reports_Fixed.xlsx");
-        } catch (err) { alert("Error: " + err.message); }
+
+            XLSX.writeFile(wb, `Grab_Combined_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        } catch (err) { alert("Export Error: " + err.message); }
     });
 </script>
 </body>
