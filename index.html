@@ -27,13 +27,14 @@
     h2 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
     h5 { margin-bottom: 30px; font-size: 1.1em; font-weight: 400; text-align: center; color: #eee; }
 
-    .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
     .menu a {
       display: inline-block; padding: 16px 30px; border-radius: 12px;
       font-size: 1.1em; font-weight: 600; text-decoration: none;
       color: #fff; background: rgba(255,255,255,0.1);
       border: 2px solid rgba(255,255,255,0.3);
       backdrop-filter: blur(6px); transition: all 0.3s ease; text-align: center;
+      min-width: 180px;
     }
     .menu a:hover {
       background: #fff; color: #333; transform: translateY(-3px);
@@ -88,7 +89,9 @@
       <button class="whatsnew-btn" onclick="openReceiptWhatsNew()">🆕 What's New?</button>
     </div>
 
-    <a href="Grab transaction processor.html">💚 Grab Processor<br><span class="ver">v1.0</span></a>
+    <a href="Grab transaction processor.html">💚 Grab Processor<br><span class="ver">v1.1</span></a>
+
+    <a href="BarcodeGenerator.html">🏷️ Barcode Generator<br><span class="ver">v1</span></a>
 
     <a href="AutoPMIX.html">⚙️ Product Mix Generator<br><span class="ver">v16</span></a>
 
