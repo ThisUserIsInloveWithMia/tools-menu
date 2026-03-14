@@ -25,7 +25,6 @@
     transition: background-color 0.6s ease, color 0.6s ease;
   }
 
-  /* ===== Header ===== */
   header{
     display:flex; justify-content:space-between; align-items:center;
     padding:10px 16px;
@@ -39,7 +38,6 @@
   .title-wrap h1{ margin:0; font-size:20px; color:var(--accent-2); }
   .title-wrap h2{ margin:0; font-size:12px; color:var(--muted); }
 
-  /* Transparent menu icon */
   .icon-btn{
     background:none; border:none; color:var(--text);
     font-size:22px; cursor:pointer; padding:6px; border-radius:8px;
@@ -85,7 +83,6 @@
   }
   .footer{ margin-top:14px; text-align:center; }
 
-  /* ===== Sidebar Menu ===== */
   .sidebar{
     position:fixed; top:0; left:0;
     width:300px; height:100%;
@@ -123,7 +120,6 @@
   .close-btn:hover{ background:var(--accent-2); }
 
   
-/* ===== Responsive Receipt Layout ===== */
 .row-line { display:block; }
 .receipt-table { display:none; width:100%; border-collapse:collapse; margin-top:6px; }
 .receipt-table th,.receipt-table td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); }
@@ -166,7 +162,6 @@ color:white;
     <div class="theme-switch"><span id="themeIcon" class="theme-icon">🌙</span></div>
   </header>
 
-  <!-- Sidebar Menu -->
   <div id="sidebar" class="sidebar">
     <div class="sidebar-header">
       <h3>Menu</h3>
@@ -207,7 +202,6 @@ color:white;
     <div class="footer"><button id="reportBtn" disabled>📥 Report Project Summary</button></div>
   </div>
 
-  <!-- Help Modal -->
   <div id="helpModal" class="modal">
     <div class="modal-content">
       <h3>Rounding Receipt (Pangsuma)</h3>
@@ -232,7 +226,6 @@ color:white;
     </div>
   </div>
 
-  <!-- Price Adjustment Modal -->
   <div id="priceModal" class="modal">
     <div class="modal-content">
       <h3>Price Adjustment</h3>
@@ -245,7 +238,6 @@ color:white;
   </div>
 
 <script>
-// ===== Full Default Product Lists =====
 const DEFAULT_BREADS = {
 "3-Meat Buns": 99, "Asado Roll": 55, "Asado Square": 188, "Baby Enzaimada": 49, 
 "Baked Chicken Empanada": 65, "BAKED CHICKEN EMPANADA x10": 630, "BAKED CHICKEN EMPANADA x3": 192, 
@@ -334,21 +326,17 @@ function resetPrices(){
 }
 
 
-// ===== v4 Data Bridge =====
-// Build BREADS/CAKES arrays from current editable price objects (breads/cakes)
 function rebuildArraysFromStorage(){
   BREADS = Object.entries(breads).map(([n,p])=>[n, Number(p)]);
   CAKES  = Object.entries(cakes).map(([n,p])=>[n, Number(p)]);
 }
 
-// ===== Helpers =====
 const $ = s => document.querySelector(s);
 function money(n){ return "₱"+(+n).toFixed(2); }
 function vatFromGross(g){ return +(g*12/112).toFixed(2); }
 function netFromGross(g){ return +(g - vatFromGross(g)).toFixed(2); }
 
 let projectSummary = "";
-// ===== History System =====
 
 function saveToHistory(receipts, summaryHTML){
 
@@ -423,7 +411,6 @@ renderHistoryList();
 
 }
 
-// ===== Theme =====
 function applyTheme(){
   const theme = localStorage.getItem("theme") || "light";
   document.body.classList.toggle("dark", theme==="dark");
@@ -443,20 +430,15 @@ renderHistoryList();
   $("#themeIcon").addEventListener("click", toggleTheme);
 });
 
-// ===== Sidebar =====
 function openMenu(){ $("#sidebar").classList.add("open"); }
 function closeMenu(){ $("#sidebar").classList.remove("open"); }
 
-// ===== Modals =====
 function openHelp(){ $("#helpModal").style.display="flex"; }
 function closeHelp(){ $("#helpModal").style.display="none"; }
 function openVersion(){ $("#versionModal").style.display="flex"; }
 function closeVersion(){ $("#versionModal").style.display="none"; }
 function openPriceAdjust(){ loadPrices(); renderPriceAdjust(); $("#priceModal").style.display="flex"; }
 function closePriceAdjust(){ $("#priceModal").style.display="none"; }
-
-// ===== Generator (safe fallback) =====
-
 
 
 
@@ -518,7 +500,6 @@ function generate(){
     return {items:[[1,n,p]],cake:true};
   }
 
-  // --- 1) Generate exactly (count-1) normal receipts ---
   let receipts=[], current=start;
   for(let i=0;i<Math.max(0,count-1);i++){
     let cand;
@@ -534,11 +515,9 @@ function generate(){
     }
   }
 
-  // If we somehow generated fewer (shouldn't happen), pad with tiny receipt lines before balancing
   while(receipts.length < count-1){
     receipts.push({num:current++, items:[[1,"Pandecoco",18]], gross:18});
   }
-  // If too many, trim down to count-1
   if(receipts.length > count-1){
     receipts = receipts.slice(0, count-1);
     current = receipts[receipts.length-1].num + 1;
@@ -549,9 +528,7 @@ function generate(){
   }
   let running = recomputeRunning();
 
-  // --- 2) Exact peso balancing across receipts (centavos reserved for rounding) ---
   function tryAddPeso(p){
-    // add one item of price p to a random non-cake receipt
     for(let tries=0; tries<60; tries++){
       let r = receipts[Math.floor(Math.random()*receipts.length)];
       if(!r || r.cake) continue;
@@ -566,7 +543,6 @@ function generate(){
   }
 
   function tryRemovePesoPreferHigh(p){
-    // remove one unit of an item priced p from any receipt (prefer high prices loop outside)
     for(let r of receipts){
       if(r.cake) continue;
       for(let it of r.items){
@@ -584,18 +560,13 @@ function generate(){
   }
 
   function balancePesos(){
-    // Work only with integer pesos; leave centavos for the final rounding receipt
     let diff = +(target - running).toFixed(2);
-    let pesosNeeded = Math.trunc(diff); // integer part toward zero
-    // If diff negative (overshoot), pesosNeeded is negative
-
+    let pesosNeeded = Math.trunc(diff); 
     let safety=0;
     while(pesosNeeded !== 0 && safety < 5000){
       if(pesosNeeded > 0){
-        // Need to add
         let p = LOW_PRICES.find(v => v <= pesosNeeded) || LOW_PRICES[0];
         if(!tryAddPeso(p)){
-          // two-sum add fallback
           let done=false;
           for(let a of LOW_PRICES){
             for(let b of LOW_PRICES){
@@ -606,18 +577,14 @@ function generate(){
             if(done) break;
           }
           if(!done){
-            // random small add to make progress
             let rp = LOW_PRICES[Math.floor(Math.random()*LOW_PRICES.length)];
             tryAddPeso(rp);
           }
         }
       } else {
-        // Need to remove (overshoot)
         let need = -pesosNeeded;
-        // Prefer removing a higher price first to converge faster
         let pHigh = HIGH_PRICES.find(v => v <= need) || HIGH_PRICES[HIGH_PRICES.length-1];
         if(!tryRemovePesoPreferHigh(pHigh)){
-          // try two-sum removal
           let done=false;
           for(let a of HIGH_PRICES){
             for(let b of HIGH_PRICES){
@@ -670,22 +637,17 @@ function generate(){
     centavos = +(target - running).toFixed(2);
   }
 
-  // Safety clamp
   if(centavos < 0) centavos = 0;
   centavos = +centavos.toFixed(2);
 
-  // --- 3) Final receipt: rounding (centavos only) ---
   let finalNum = current;
   const roundingReceipt = {num:finalNum, items:[[1,"Rounding Breads", centavos]], gross:centavos, rounding:true};
   receipts.push(roundingReceipt);
 
-  // Ensure exact count (pad before rounding if needed, though we took care earlier)
   if(receipts.length > count){
-    // remove extra non-rounding receipts from before rounding
     let over = receipts.length - count;
-    receipts.splice(count-1, over); // keep rounding as last
+    receipts.splice(count-1, over); 
   } else if(receipts.length < count){
-    // pad with tiny receipts of 18 before rounding, then re-adjust rounding
     let need = count - receipts.length;
     let addGross=0;
     for(let i=0;i<need;i++){
@@ -698,7 +660,6 @@ function generate(){
     receipts[receipts.length-1] = {num:finalNum, items:[[1,"Rounding Breads", centavos]], gross:centavos, rounding:true};
   }
 
-  // --- Render ---
   const wrap=$("#receipts"); wrap.innerHTML="";
   receipts.forEach((r,idx)=>{
     if(!r.items || r.items.length===0) return;
@@ -725,7 +686,6 @@ function generate(){
     wrap.appendChild(card);
   });
 
-  // --- Summary ---
   const totalGross = receipts.reduce((S,r)=>S+r.gross,0);
   const summary=document.createElement("div");
   summary.className="summary-card";
@@ -733,12 +693,10 @@ function generate(){
   summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${diffFinal >= 0 ? "+" : ""}${money(diffFinal)}`;
   $("#receipts").appendChild(summary);
 
-  // ✅ FIX: Save to history and store projectSummary
-  projectSummary = summary.outerHTML;
+	projectSummary = summary.outerHTML;
   saveToHistory(receipts, $("#receipts").innerHTML);
 }
 
-// ===== Copy / Print / Report =====
 function copyAll(){
   const text = $("#receipts").innerText.trim();
   if(!text){ alert("No receipts"); return; }
@@ -752,7 +710,6 @@ function reportIssue(){
   a.href = URL.createObjectURL(blob); a.download = "project_summary.txt"; a.click();
 }
 
-// ===== Bindings =====
 $("#genBtn").onclick = generate;
 $("#copyBtn").onclick = copyAll;
 $("#printBtn").onclick = printPDF;
@@ -761,7 +718,6 @@ $("#menuBtn").onclick = openMenu;
 document.getElementById("searchBox").addEventListener("input", e => renderPriceAdjust(e.target.value));
 </script>
 
-<!-- What's New Modal -->
 <div id="whatsNewModal" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>What's new?</h3>
