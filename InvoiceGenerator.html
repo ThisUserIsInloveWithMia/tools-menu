@@ -140,6 +140,20 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
     .container{ max-width:100%; padding:0; }
     .receipt-card,.summary-card{ box-shadow:none; border:1px solid #000; page-break-inside:avoid; }
   }
+  .history-item{
+padding:10px;
+border-bottom:1px solid #ddd;
+font-size:12px;
+cursor:pointer;
+border-radius:8px;
+margin-bottom:6px;
+background:#f7f7f7;
+}
+
+.history-item:hover{
+background:#2f7dfa;
+color:white;
+}
   </style>
 </head>
 <body>
@@ -164,6 +178,14 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
       <div class="menu-card" onclick="reportIssue()">📥 Report Project Summary</div>
       <div class="menu-card" onclick="openPriceAdjust()">🛠 Price Adjustment</div>
     </div>
+	<hr>
+<h4>📜 Generation History</h4>
+
+<div id="historyList"></div>
+
+<div class="menu-card" onclick="clearHistory()" style="background:#ff4757;color:white;margin-top:10px;">
+🗑 Clear History
+</div>
   </div>
 
   <div class="container">
@@ -204,6 +226,7 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
         <li>Price Adjustment modal restored with full products</li>
         <li>Transparent menu icon</li>
         <li>Fixed generator (cakes solo, rounding 150–250)</li>
+        <li>✅ Generation History Feature Fixed</li>
       </ul>
       <button class="close-btn" onclick="closeVersion()">OK</button>
     </div>
@@ -255,7 +278,7 @@ const DEFAULT_BREADS = {
 "Cheese Bites x24": 260, "Double Cheese Roll x8": 190, "Enzaimada Trio x6": 260, 
 "Enzaimada Trio x9": 398, "Milky Cream Cheese Roll x8": 260, "Mini Cream Cheese Enzaimada": 290, 
 "Paborito Box x10": 190, "Savory Buns x6": 210, "Savory Buns x9": 295, "Signature Enzaimada x6": 225, 
-"Signature Enzaimada x9": 330, "Soft Cinnamon Rolls x6": 290, "Spanish Coffee Bun x9": 175
+"Signature Enzaimada x9": 330, "Soft Cinnamon Rolls x6": 290
 };
 
 const DEFAULT_CAKES = {
@@ -325,6 +348,80 @@ function vatFromGross(g){ return +(g*12/112).toFixed(2); }
 function netFromGross(g){ return +(g - vatFromGross(g)).toFixed(2); }
 
 let projectSummary = "";
+// ===== History System =====
+
+function saveToHistory(receipts, summaryHTML){
+
+let history = JSON.parse(localStorage.getItem("kb_history_logs") || "[]");
+
+history.unshift({
+time: new Date().toLocaleString(),
+target: document.getElementById("grossTarget").value,
+receipts: receipts,
+summary: summaryHTML
+});
+
+localStorage.setItem(
+"kb_history_logs",
+JSON.stringify(history.slice(0,15))
+);
+
+renderHistoryList();
+}
+
+function renderHistoryList(){
+
+const list = document.getElementById("historyList");
+
+if(!list) return;
+
+let history = JSON.parse(localStorage.getItem("kb_history_logs") || "[]");
+
+list.innerHTML = "";
+
+if(history.length === 0){
+list.innerHTML = "No history yet.";
+return;
+}
+
+history.forEach(h=>{
+
+let item = document.createElement("div");
+
+item.className="history-item";
+
+item.innerHTML = `
+<b>${h.time}</b><br>
+Target: ₱${h.target}
+`;
+
+item.onclick = function(){
+
+document.getElementById("receipts").innerHTML="";
+
+document.getElementById("receipts").innerHTML = h.summary;
+
+window.scrollTo(0,0);
+
+};
+
+list.appendChild(item);
+
+});
+
+}
+
+function clearHistory(){
+
+if(confirm("Clear all history logs?")){
+
+localStorage.removeItem("kb_history_logs");
+
+renderHistoryList();
+
+}
+
+}
 
 // ===== Theme =====
 function applyTheme(){
@@ -339,8 +436,10 @@ function toggleTheme(){
   applyTheme();
   const icon = $("#themeIcon"); if(icon){ icon.classList.add("spin"); setTimeout(()=>icon.classList.remove("spin"), 600); }
 }
-document.addEventListener("DOMContentLoaded", ()=>{
-  applyTheme();
+document.addEventListener("DOMContentLoaded", function(){
+
+renderHistoryList();
+
   $("#themeIcon").addEventListener("click", toggleTheme);
 });
 
@@ -357,8 +456,6 @@ function openPriceAdjust(){ loadPrices(); renderPriceAdjust(); $("#priceModal").
 function closePriceAdjust(){ $("#priceModal").style.display="none"; }
 
 // ===== Generator (safe fallback) =====
-
-
 
 
 
@@ -633,9 +730,14 @@ function generate(){
   const summary=document.createElement("div");
   summary.className="summary-card";
   const diffFinal=+(totalGross - target).toFixed(2);
-  summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${diffFinal>0?"+":""}${money(diffFinal)}`;
+  summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${diffFinal >= 0 ? "+" : ""}${money(diffFinal)}`;
   $("#receipts").appendChild(summary);
+
+  // ✅ FIX: Save to history and store projectSummary
+  projectSummary = summary.outerHTML;
+  saveToHistory(receipts, $("#receipts").innerHTML);
 }
+
 // ===== Copy / Print / Report =====
 function copyAll(){
   const text = $("#receipts").innerText.trim();
@@ -666,6 +768,7 @@ document.getElementById("searchBox").addEventListener("input", e => renderPriceA
     <ul>
       <li>• Common bug fixes</li>
       <ul>
+        <li>✅ Fixed Generation History Feature</li>
         <li>Added a new Feature for large Reciepts count</li>
     </ul>
     <button onclick="closeWhatsNew()" class="btn">Cool!</button>
