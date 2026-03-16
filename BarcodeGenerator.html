@@ -55,13 +55,13 @@
 
     <div class="search-area">
         <select id="catFilter" onchange="doSearch()">
-            <option value="all">All Items</option>
-            <option value="setup">Scanner Settings</option>
-            <option value="Bread">Breads</option>
-            <option value="Cakes">Cakes</option>
-            <option value="Sulit Pack">Sulit Packs</option>
-            <option value="Pastries">Pastries</option>
-        </select>
+    <option value="all">All Items</option>
+    <option value="setup">Scanner Settings</option>
+    <option value="Bread">Breads</option>
+    <option value="Cakes">Cakes</option>
+    <option value="Pastries">Pastries</option>
+    <option value="Packaging">Packaging</option> <option value="Sulit Pack">Sulit Packs</option>
+</select>
         <input type="text" id="breadSearch" placeholder="Search product name..." onkeyup="doSearch()">
         <button class="bulk-btn" onclick="downloadAllAsZip()">Download ZIP</button>
     </div>
@@ -226,6 +226,25 @@
     {cat: "Pastries", name: "Mini Jelly Roll x12", code: "127895732", price: 220},
     {cat: "Pastries", name: "Chiffon cake", code: "127895722", price: 68},
     {cat: "Pastries", name: "Flossy Chiffon x4", code: "127895725", price: 110},
+        
+    {cat: "Packaging", name: "FREE COUNTER BAG LARGE", code: "1279082048", price: 0},
+    {cat: "Packaging", name: "FREE COUNTER BAG MEDIUM", code: "1279082047", price: 0},
+    {cat: "Packaging", name: "FREE COUNTER BAG SMALL", code: "1279082046", price: 0},
+    {cat: "Packaging", name: "FREE COUNTER BAG TINY", code: "1279082045", price: 0},
+    {cat: "Packaging", name: "FREE EMPANADA BOX", code: "12789520750", price: 0},
+    {cat: "Packaging", name: "FREE EMPANADA CONTAINER", code: "12790920500", price: 0},
+    {cat: "Packaging", name: "Free King's Eco bag Extra Large", code: "1279092014", price: 0},
+    {cat: "Packaging", name: "Free King's Eco bag Large", code: "1279092013", price: 0},
+    {cat: "Packaging", name: "Free King's Eco bag Medium", code: "1279092012", price: 0},
+    {cat: "Packaging", name: "Free King's Thermal bag Medium", code: "1279092010", price: 0},
+    {cat: "Packaging", name: "Free King's Thermal bag Small", code: "1279092011", price: 0},
+    {cat: "Packaging", name: "Free Paper Bag # 11", code: "1279082044", price: 0},
+    {cat: "Packaging", name: "Free Paper Bag # 12", code: "1279082041", price: 0},
+    {cat: "Packaging", name: "Free Paper Bag # 15", code: "1279082043", price: 0},
+    {cat: "Packaging", name: "Free Paper Bag # 20", code: "1279082040", price: 0},
+    {cat: "Packaging", name: "Free Paper Bag #16", code: "1279082042", price: 0},
+    {cat: "Packaging", name: "FREE PASALUBONG BOX", code: "12790820660", price: 0},
+    {cat: "Packaging", name: "FREE TEA EGG CONTAINER", code: "12790920490", price: 0},
     ];
 
     function doSearch() {
