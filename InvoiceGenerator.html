@@ -50,10 +50,19 @@
   .container{ max-width:980px; margin:auto; padding:20px; }
 
   label{ display:block; margin-top:15px; font-weight:600; }
-  input{
+  input[type="number"], input[type="text"]{
     margin-top:6px; padding:10px; width:100%;
     border-radius:8px; border:2px solid var(--accent);
     background:var(--card); color:var(--text);
+  }
+  input[type="checkbox"]{
+    margin-right:8px; cursor:pointer;
+  }
+  .checkbox-group{
+    display:flex; gap:20px; flex-wrap:wrap; margin-top:10px; align-items:center;
+  }
+  .checkbox-item{
+    display:flex; align-items:center; gap:6px;
   }
   button{
     margin-top:10px; padding:12px; border:none; border-radius:25px;
@@ -132,7 +141,7 @@ body.dark .receipt-table th { background:rgba(255,255,255,0.06); }
 }
 
 @media print{
-    header,.btn-row,.footer,label,input,.modal,.sidebar{ display:none!important; }
+    header,.btn-row,.footer,label,input,.modal,.sidebar,.checkbox-group{ display:none!important; }
     .container{ max-width:100%; padding:0; }
     .receipt-card,.summary-card{ box-shadow:none; border:1px solid #000; page-break-inside:avoid; }
   }
@@ -191,6 +200,17 @@ color:white;
     <label>Approx. Receipt Count</label>
     <input id="approxCount" type="number" placeholder="e.g., 55" />
 
+    <div class="checkbox-group">
+      <div class="checkbox-item">
+        <input id="includePanini" type="checkbox" checked />
+        <label for="includePanini" style="margin:0;">Include Paninis?</label>
+      </div>
+      <div class="checkbox-item">
+        <input id="includeDonut" type="checkbox" checked />
+        <label for="includeDonut" style="margin:0;">Include Donuts?</label>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button id="genBtn">Generate Receipts</button>
       <button id="copyBtn">Copy All Receipts</button>
@@ -213,8 +233,11 @@ color:white;
   <!-- Version Modal -->
   <div id="versionModal" class="modal">
     <div class="modal-content">
-      <h3>Version 14 Sidebar + Fix</h3>
+      <h3>Version 15 Product Categories</h3>
       <ul style="text-align:left;font-size:14px;">
+        <li>Separated Paninis into distinct category</li>
+        <li>Separated Donuts into distinct category</li>
+        <li>Added Panini & Donut inclusion checkboxes</li>
         <li>Updated Prices as of February 06,2026</li>
         <li>Modern sidebar menu</li>
         <li>Price Adjustment modal AS OF APRIL 2026</li>
@@ -259,12 +282,6 @@ const DEFAULT_BREADS = {
 "Cheese Stick Bread": 48, "Coco Cluster x6": 68, "Coffee Bavarian Bun": 55,
 "Coffee Roti Roll": 38, "Mongo Roll": 27, "Ube Stick": 29,
 "Signature Spanish Bread": 25, "Signature Spanish Bread x4": 95, "Signature Spanish Bread x10": 230,
-"TRIPLE GRILLED CHEESE PANINI": 98, "TUNA MELT PANINI": 98, "PEPPERONI & CHEESE PANINI": 108, "CHICKEN PESTO PANINI": 128,
-"Boston Creme Donut": 59, "Coffee Crumble Donut": 59, "Avocado Delight Donut": 59, "Biscoffee Donut": 59,
-"Matcha Crumble Donut": 59, "Oreo Madness Donut": 59, "Strawberry Swirl Donut": 59, "S'mores Donut": 59,
-"Tira-Miss You Donut": 59, "Velvet Cream Cheese Donut": 59, "White Almond Glaze Donut": 59,
-"Signature Donuts - Box of 6": 330, "Signature Donuts - Box of 8": 440,
-"(PHASE-OUT) White Choco Curls Donut": 59,
 "Banana Loaf (New Improved)": 204, "Banana Slice": 48, "Cheese Pie": 32, "Chiffon Cake": 72, "Choco Crinkles": 62,
 "Choco Vanilla Sandwich": 45, "Cloud Cream Bun": 59, "Choco Cream Bun": 59, "Cotton Cloud": 148,
 "Flossy Chiffon x4": 115, "Fudge Brownies Single": 32, "Fudge Brownies x12": 135,
@@ -272,6 +289,18 @@ const DEFAULT_BREADS = {
 "Mini Jelly Roll x12": 230, "Mini Jelly Roll x8": 115, "Mini Party Cakes x12": 240,
 "Mocha Vanilla Sandwich": 45, "Premium Taisan Bar": 90, "S'mores Fudge x8": 210,
 "Sossy Flossy Roll": 115, "Very Cheesy Mamon": 52, "Yema Krema": 95
+};
+
+const DEFAULT_PANINIS = {
+"TRIPLE GRILLED CHEESE PANINI": 98, "TUNA MELT PANINI": 98, "PEPPERONI & CHEESE PANINI": 108, "CHICKEN PESTO PANINI": 128
+};
+
+const DEFAULT_DONUTS = {
+"Boston Creme Donut": 59, "Coffee Crumble Donut": 59, "Avocado Delight Donut": 59, "Biscoffee Donut": 59,
+"Matcha Crumble Donut": 59, "Oreo Madness Donut": 59, "Strawberry Swirl Donut": 59, "S'mores Donut": 59,
+"Tira-Miss You Donut": 59, "Velvet Cream Cheese Donut": 59, "White Almond Glaze Donut": 59,
+"Signature Donuts - Box of 6": 330, "Signature Donuts - Box of 8": 440,
+"(PHASE-OUT) White Choco Curls Donut": 59
 };
 
 const DEFAULT_CAKES = {
@@ -286,9 +315,11 @@ const DEFAULT_CAKES = {
 };
 
 
-let breads = {}, cakes = {};
+let breads = {}, paninis = {}, donuts = {}, cakes = {};
 function loadPrices(){
   breads = JSON.parse(localStorage.getItem("breads") || JSON.stringify(DEFAULT_BREADS));
+  paninis = JSON.parse(localStorage.getItem("paninis") || JSON.stringify(DEFAULT_PANINIS));
+  donuts = JSON.parse(localStorage.getItem("donuts") || JSON.stringify(DEFAULT_DONUTS));
   cakes  = JSON.parse(localStorage.getItem("cakes")  || JSON.stringify(DEFAULT_CAKES));
 }
 function renderPriceAdjust(filter=""){
@@ -299,6 +330,20 @@ function renderPriceAdjust(filter=""){
     if(!f || name.toLowerCase().includes(f)){
       html += `<div class="price-row"><span>${name}</span>
                 <input type="number" class="price-input" data-cat="bread" data-name="${name}" value="${price}" /></div>`;
+    }
+  });
+  html += "<div class='section-title'>🥪 Paninis</div>";
+  Object.entries(paninis).forEach(([name, price])=>{
+    if(!f || name.toLowerCase().includes(f)){
+      html += `<div class="price-row"><span>${name}</span>
+                <input type="number" class="price-input" data-cat="panini" data-name="${name}" value="${price}" /></div>`;
+    }
+  });
+  html += "<div class='section-title'>🍩 Donuts</div>";
+  Object.entries(donuts).forEach(([name, price])=>{
+    if(!f || name.toLowerCase().includes(f)){
+      html += `<div class="price-row"><span>${name}</span>
+                <input type="number" class="price-input" data-cat="donut" data-name="${name}" value="${price}" /></div>`;
     }
   });
   html += "<div class='section-title'>🍰 Cakes</div>";
@@ -313,22 +358,34 @@ function renderPriceAdjust(filter=""){
 function savePrices(){
   document.querySelectorAll(".price-input").forEach(inp=>{
     const val = +inp.value, cat = inp.dataset.cat, name = inp.dataset.name;
-    if(cat==="bread") breads[name]=val; else cakes[name]=val;
+    if(cat==="bread") breads[name]=val;
+    else if(cat==="panini") paninis[name]=val;
+    else if(cat==="donut") donuts[name]=val;
+    else cakes[name]=val;
   });
   localStorage.setItem("breads", JSON.stringify(breads));
+  localStorage.setItem("paninis", JSON.stringify(paninis));
+  localStorage.setItem("donuts", JSON.stringify(donuts));
   localStorage.setItem("cakes",  JSON.stringify(cakes));
   alert("✅ Prices updated!");
 }
 function resetPrices(){
   breads = {...DEFAULT_BREADS};
+  paninis = {...DEFAULT_PANINIS};
+  donuts = {...DEFAULT_DONUTS};
   cakes  = {...DEFAULT_CAKES};
-  localStorage.removeItem("breads"); localStorage.removeItem("cakes");
+  localStorage.removeItem("breads");
+  localStorage.removeItem("paninis");
+  localStorage.removeItem("donuts");
+  localStorage.removeItem("cakes");
   renderPriceAdjust();
 }
 
 
 function rebuildArraysFromStorage(){
   BREADS = Object.entries(breads).map(([n,p])=>[n, Number(p)]);
+  PANINIS = Object.entries(paninis).map(([n,p])=>[n, Number(p)]);
+  DONUTS = Object.entries(donuts).map(([n,p])=>[n, Number(p)]);
   CAKES  = Object.entries(cakes).map(([n,p])=>[n, Number(p)]);
 }
 
@@ -448,10 +505,15 @@ function generate(){
   const start  = +$("#startNumber").value;
   const target = +(parseFloat($("#grossTarget").value).toFixed(2));
   const count  = +$("#approxCount").value;
+  const includePanini = document.getElementById("includePanini").checked;
+  const includeDonut = document.getElementById("includeDonut").checked;
+  
   if(!start || !target || !count){ alert("Fill in all inputs"); return; }
   if(target < 50){ alert("Target gross too low."); return; }
 
   const breadsArr = Object.entries(breads);
+  const paniniArr = includePanini ? Object.entries(paninis) : [];
+  const donutArr = includeDonut ? Object.entries(donuts) : [];
   const cakesArr  = Object.entries(cakes);
 
   // Cake rule: disable cakes entirely when requested receipts <= 20
@@ -496,6 +558,18 @@ function generate(){
     return {items};
   }
 
+  function makePaniniReceipt(){
+    if(paniniArr.length === 0) return null;
+    let [n,p]=paniniArr[Math.floor(Math.random()*paniniArr.length)];
+    return {items:[[1,n,p]],panini:true};
+  }
+
+  function makeDonutReceipt(){
+    if(donutArr.length === 0) return null;
+    let [n,p]=donutArr[Math.floor(Math.random()*donutArr.length)];
+    return {items:[[1,n,p]],donut:true};
+  }
+
   function makeCakeReceipt(){
     let [n,p]=cakesArr[Math.floor(Math.random()*cakesArr.length)];
     return {items:[[1,n,p]],cake:true};
@@ -504,12 +578,19 @@ function generate(){
   let receipts=[], current=start;
   for(let i=0;i<Math.max(0,count-1);i++){
     let cand;
-    if(cakesEnabled && Math.random()<0.18){
+    let rand = Math.random();
+    if(cakesEnabled && rand<0.18){
       cand = makeCakeReceipt();
+    } else if(includePanini && rand<0.25){
+      cand = makePaniniReceipt();
+      if(!cand) cand = makeBreadReceipt();
+    } else if(includeDonut && rand<0.25){
+      cand = makeDonutReceipt();
+      if(!cand) cand = makeBreadReceipt();
     } else {
       cand = makeBreadReceipt();
     }
-    if(cand.items && cand.items.length>0){
+    if(cand && cand.items && cand.items.length>0){
       cand.gross = cand.items.reduce((s,it)=>s+(it[0]*it[2]),0);
       cand.num = current++;
       receipts.push(cand);
@@ -668,7 +749,12 @@ function generate(){
     card.className="receipt-card"+(r.rounding?" rounding":"");
     const header=document.createElement("div");
     header.className="receipt-header";
-    header.textContent = r.rounding?`🔶 Receipt ${r.num} (Rounding)`: `Receipt ${r.num}${r.cake?" — Cake Only":""}`;
+    let headerText = `Receipt ${r.num}`;
+    if(r.rounding) headerText = `🔶 Receipt ${r.num} (Rounding)`;
+    else if(r.cake) headerText += " — Cake Only";
+    else if(r.panini) headerText += " — Panini";
+    else if(r.donut) headerText += " — Donut";
+    header.textContent = headerText;
     card.appendChild(header);
     let grossCheck=0;
     r.items.forEach(it=>{
@@ -691,7 +777,11 @@ function generate(){
   const summary=document.createElement("div");
   summary.className="summary-card";
   const diffFinal=+(totalGross - target).toFixed(2);
-  summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${diffFinal >= 0 ? "+" : ""}${money(diffFinal)}`;
+  const inclusions = [];
+  if(includePanini) inclusions.push("Paninis");
+  if(includeDonut) inclusions.push("Donuts");
+  const inclusionText = inclusions.length > 0 ? `(${inclusions.join(", ")})` : "";
+  summary.innerHTML=`PROJECT SUMMARY<br>Receipts Requested: ${count}<br>Receipts Generated: ${receipts.length}<br>Target Gross: ${money(target)}<br>Grand Gross: ${money(totalGross)}<br>Difference: ${money(diffFinal)}<br><small>${inclusionText}</small>`;
   $("#receipts").appendChild(summary);
 
 	projectSummary = summary.outerHTML;
@@ -723,10 +813,11 @@ document.getElementById("searchBox").addEventListener("input", e => renderPriceA
   <div class="modal-content">
     <h3>What's new?</h3>
     <ul>
-      <li>• Common bug fixes</li>
+      <li>• Separated product categories</li>
       <ul>
-        <li>✅ Fixed Generation History Feature</li>
-        <li>Updated Price as of APRIL 2026</li>
+        <li>✅ Paninis now in own category</li>
+        <li>✅ Donuts now in own category</li>
+        <li>✅ Added inclusion checkboxes</li>
     </ul>
     <button onclick="closeWhatsNew()" class="btn">Cool!</button>
   </div>
