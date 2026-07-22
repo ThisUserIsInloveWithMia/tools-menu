@@ -152,7 +152,7 @@
                 ["Total Sales", totals.sales.toFixed(2)],
                 ["Total Commission", totals.comm.toFixed(2)],
                 ["Total Ads/Adjustments", totals.ads.toFixed(2)],
-                ["COMBINED SETTLEMENT", totals.net.toFixed(2)]
+                ["BANK SETTLEMENT", totals.net.toFixed(2)]
             ];
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumData), "GRAND_SUMMARY");
 
@@ -171,7 +171,7 @@
                     "Category": r["Category"],
                     "Net Sales": parseVal(r["Net Sales"]),
                     "Commission": parseVal(r["Order commission"]),
-                    "Total": parseVal(r["Total"])
+                    "Bank Settlement": parseVal(r["Total"])
                 }));
 
                 // RESTORE SHEET FOOTER TOTALS
